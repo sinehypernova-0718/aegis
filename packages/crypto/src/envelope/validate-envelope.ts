@@ -1,7 +1,6 @@
 import {
   ENVELOPE_VERSION,
   fromBase64Url,
-  toBase64Url,
   KDF_ALGORITHM,
   WRAP_ALGORITHM,
 } from '../types.js';

@@ -52,9 +52,24 @@ export function fromBase64Url(value: string): Uint8Array {
   if (typeof value !== 'string' || value.length === 0) {
     throw new MalformedInputError('value must be a non-empty base64url string');
   }
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) {
+    throw new MalformedInputError('value must use base64url characters only');
+  }
+  if (value.includes('=')) {
+    throw new MalformedInputError('value must not include base64 padding');
+  }
   const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((value.length + 3) % 4);
-  const binary = atob(padded);
+  let binary: string;
+  try {
+    binary = atob(padded);
+  } catch {
+    throw new MalformedInputError('value is not valid base64url');
+  }
   const out = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) (out as Uint8Array)[i] = binary.charCodeAt(i);
+  // Reject non-canonical encodings (trailing bits / invalid unpadded length).
+  if (toBase64Url(out) !== value) {
+    throw new MalformedInputError('value is not a canonical base64url encoding');
+  }
   return out;
 }

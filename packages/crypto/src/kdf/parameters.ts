@@ -47,16 +47,28 @@ export const KDF_MAXIMUMS: {
   saltLength: 64,
 } as const;
 
+/**
+ * Validate KDF parameters.
+ *
+ * The supplied algorithm is checked before any defaults are applied, so an
+ * explicit unsupported value cannot be silently overwritten. Out-of-range
+ * values are rejected (never clamped) before Argon2id runs.
+ */
 export function validateKdfParameters(input: Partial<KdfParameters> | KdfParameters): KdfParameters {
+  const suppliedAlgorithm =
+    input && Object.prototype.hasOwnProperty.call(input, 'algorithm')
+      ? (input as { algorithm?: unknown }).algorithm
+      : KDF_DEFAULTS.algorithm;
+
+  if (suppliedAlgorithm !== KDF_ALGORITHM) {
+    throw new InvalidParametersError(`unsupported KDF algorithm: ${String(suppliedAlgorithm)}`);
+  }
+
   const merged: KdfParameters = {
     ...KDF_DEFAULTS,
     ...input,
     algorithm: KDF_ALGORITHM,
   };
-
-  if (merged.algorithm !== KDF_ALGORITHM) {
-    throw new InvalidParametersError(`unsupported KDF algorithm: ${String(merged.algorithm)}`);
-  }
   if (!Number.isInteger(merged.memoryKiB) || merged.memoryKiB < KDF_MINIMUMS.memoryKiB || merged.memoryKiB > KDF_MAXIMUMS.memoryKiB) {
     throw new InvalidParametersError(`memoryKiB must be an integer in [${KDF_MINIMUMS.memoryKiB}, ${KDF_MAXIMUMS.memoryKiB}]`);
   }

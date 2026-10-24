@@ -1,6 +1,6 @@
 import { clean } from '@noble/ciphers/utils';
 import { deriveKek } from '../kdf/derive-key.js';
-import { generateDek, DEK_LENGTH } from '../keys/generate-dek.js';
+import { generateDek } from '../keys/generate-dek.js';
 import { wrapKey } from '../keys/wrap-key.js';
 import { createVaultKeyEnvelope } from '../envelope/schema.js';
 import { validateVaultKeyEnvelope } from '../envelope/validate-envelope.js';
