@@ -43,7 +43,7 @@ export const KDF_MAXIMUMS: {
   memoryKiB: 256 * 1024, // 256 MiB (DoS guard)
   passes: 5,
   parallelism: 4,
-  tagLength: 64,
+  tagLength: 32,
   saltLength: 64,
 } as const;
 
@@ -78,8 +78,8 @@ export function validateKdfParameters(input: Partial<KdfParameters> | KdfParamet
   if (!Number.isInteger(merged.parallelism) || merged.parallelism < KDF_MINIMUMS.parallelism || merged.parallelism > KDF_MAXIMUMS.parallelism) {
     throw new InvalidParametersError(`parallelism must be an integer in [${KDF_MINIMUMS.parallelism}, ${KDF_MAXIMUMS.parallelism}]`);
   }
-  if (!Number.isInteger(merged.tagLength) || merged.tagLength < KDF_MINIMUMS.tagLength || merged.tagLength > KDF_MAXIMUMS.tagLength) {
-    throw new InvalidParametersError(`tagLength must be an integer in [${KDF_MINIMUMS.tagLength}, ${KDF_MAXIMUMS.tagLength}]`);
+  if (merged.tagLength !== 32) {
+    throw new InvalidParametersError('tagLength must be exactly 32 bytes to match the XChaCha20-Poly1305 key size');
   }
   if (!Number.isInteger(merged.saltLength) || merged.saltLength < KDF_MINIMUMS.saltLength || merged.saltLength > KDF_MAXIMUMS.saltLength) {
     throw new InvalidParametersError(`saltLength must be an integer in [${KDF_MINIMUMS.saltLength}, ${KDF_MAXIMUMS.saltLength}]`);

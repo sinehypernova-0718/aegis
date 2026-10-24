@@ -62,8 +62,8 @@ export function validateVaultKeyEnvelope(input: unknown): VaultKeyEnvelope {
   if (!Number.isInteger(parallelism) || parallelism < KDF_MINIMUMS.parallelism || parallelism > KDF_MAXIMUMS.parallelism) {
     throw new InvalidParametersError('kdf parallelism out of range');
   }
-  if (!Number.isInteger(tagLength) || tagLength < KDF_MINIMUMS.tagLength || tagLength > KDF_MAXIMUMS.tagLength) {
-    throw new InvalidParametersError('kdf tagLength out of range');
+  if (tagLength !== 32) {
+    throw new InvalidParametersError('kdf tagLength must be exactly 32');
   }
 
   let saltBytes: Uint8Array;

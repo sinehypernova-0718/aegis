@@ -15,10 +15,6 @@ import {
 } from './errors.js';
 
 describe('Flow A - initial vault creation', () => {
-  it('loads package entry point', () => {
-    // sanity placeholder coverage lives in index.test.ts
-  });
-
   it('creates a valid, persistable envelope', async () => {
     const env = await createVaultKeyMaterial('correct horse battery staple');
     expect(env.version).toBe(1);

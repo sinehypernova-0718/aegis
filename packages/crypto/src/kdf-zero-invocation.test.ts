@@ -88,6 +88,28 @@ describe('KDF: validation occurs before Argon2', () => {
     expect(argon2).not.toHaveBeenCalled();
   });
 
+  it('rejects tagLength 31 without invoking Argon2', async () => {
+    await expect(
+      deriveKek({
+        passphrase: 'pw',
+        salt: validSalt,
+        params: { memoryKiB: 65536, passes: 3, parallelism: 2, tagLength: 31, saltLength: 16 },
+      }),
+    ).rejects.toThrow(InvalidParametersError);
+    expect(argon2).not.toHaveBeenCalled();
+  });
+
+  it('rejects tagLength 33 without invoking Argon2', async () => {
+    await expect(
+      deriveKek({
+        passphrase: 'pw',
+        salt: validSalt,
+        params: { memoryKiB: 65536, passes: 3, parallelism: 2, tagLength: 33, saltLength: 16 },
+      }),
+    ).rejects.toThrow(InvalidParametersError);
+    expect(argon2).not.toHaveBeenCalled();
+  });
+
   it('rejects unsupported KDF algorithm without invoking Argon2', () => {
     expect(() =>
       validateKdfParameters({ algorithm: 'scrypt' as unknown as 'argon2id' }),

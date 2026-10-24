@@ -48,7 +48,7 @@ flowchart TD
 | `memoryKiB` | 65536 (64 MiB) | 65536 | 262144 (256 MiB) |
 | `passes` | 3 | 3 | 5 |
 | `parallelism` | 4 | 1 | 4 |
-| `tagLength` | 32 | 32 | 64 |
+| `tagLength` | 32 | 32 (exact, fixed) | 32 (exact, fixed) |
 | `saltLength` | 16 | 16 | 64 |
 
 Out-of-range or hostile persisted values are rejected before Argon2id runs.
