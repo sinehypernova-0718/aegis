@@ -4,6 +4,9 @@
 	"description": "Cryptographic primitives and key-management operations for Aegis.",
 	"license": "Apache-2.0",
 	"type": "module",
+	"engines": {
+		"node": ">=24.7.0"
+	},
 	"sideEffects": false,
 	"exports": {
 		".": {
@@ -32,6 +35,9 @@
 		"lint": "oxlint .",
 		"lint:fix": "oxlint . --fix",
 		"check": "biome check ."
+	},
+	"dependencies": {
+		"@noble/ciphers": "^1.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "24.19.2"
