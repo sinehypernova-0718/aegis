@@ -45,9 +45,9 @@ flowchart TD
 
 | Parameter | Default | Minimum | Maximum |
 | --- | --- | --- | --- |
-| `memoryKiB` | 65536 (64 MiB) | 65536 | 1048576 (1 GiB) |
-| `passes` | 3 | 3 | 10 |
-| `parallelism` | 4 | 1 | 64 |
+| `memoryKiB` | 65536 (64 MiB) | 65536 | 262144 (256 MiB) |
+| `passes` | 3 | 3 | 5 |
+| `parallelism` | 4 | 1 | 4 |
 | `tagLength` | 32 | 32 | 64 |
 | `saltLength` | 16 | 16 | 64 |
 
@@ -88,8 +88,11 @@ AAD domain separation: `aegis:vault-key-wrap:v1`.
 - `validateVaultKeyEnvelope()`, `createVaultKeyEnvelope()`
 - KDF parameter helpers and typed errors
 
-The passphrase, KEK, and raw DEK are never persisted in the envelope; buffers
-are zeroed best-effort (JS cannot guarantee full erasure).
+The passphrase, KEK, and raw DEK are never persisted in the envelope. Secret
+buffers are cleared best-effort with `fill(0)` / `clean()` after use, but
+JavaScript and Node.js cannot guarantee erasure from process memory,
+garbage-collected objects, or library-internal copies. Do not treat cleanup
+as a hard security guarantee.
 
 ## Runtime flow (Flow A)
 

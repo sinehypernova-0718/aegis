@@ -40,9 +40,9 @@ export const KDF_MAXIMUMS: {
   tagLength: number;
   saltLength: number;
 } = {
-  memoryKiB: 1024 * 1024, // 1 GiB (DoS guard)
-  passes: 10,
-  parallelism: 64,
+  memoryKiB: 256 * 1024, // 256 MiB (DoS guard)
+  passes: 5,
+  parallelism: 4,
   tagLength: 64,
   saltLength: 64,
 } as const;

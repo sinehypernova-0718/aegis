@@ -63,7 +63,7 @@ export async function deriveKek(input: DeriveKekInput): Promise<DerivedKek> {
   });
 
   const kek = new Uint8Array(kekBuffer);
-  // Best-effort: we cannot truly erase the Buffer held by Node, but zero our view.
+  // Best-effort only: Node/V8 may retain copies. No guarantee of erasure.
   try {
     kekBuffer.fill(0);
   } catch {

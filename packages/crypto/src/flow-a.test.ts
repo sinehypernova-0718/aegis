@@ -163,7 +163,7 @@ describe('Flow A - initial vault creation', () => {
 
   it('rejects malformed envelope structure and types', () => {
     expect(() => validateVaultKeyEnvelope(null)).toThrow(EnvelopeValidationError);
-    expect(() => validateVaultKeyEnvelope({})).toThrow();
+    expect(() => validateVaultKeyEnvelope({})).toThrow(EnvelopeValidationError);
     const bad = {
       version: 1,
       kdf: 'not-object',
@@ -225,7 +225,7 @@ describe('Flow A - initial vault creation', () => {
         ciphertext: toBase64Url(new Uint8Array(48)),
       },
     };
-    expect(() => validateVaultKeyEnvelope(env)).toThrow();
+    expect(() => validateVaultKeyEnvelope(env)).toThrow(EnvelopeValidationError);
   });
 
   it('rejects unsupported wrap algorithm in envelope', () => {
@@ -245,7 +245,7 @@ describe('Flow A - initial vault creation', () => {
         ciphertext: toBase64Url(new Uint8Array(48)),
       },
     };
-    expect(() => validateVaultKeyEnvelope(env)).toThrow();
+    expect(() => validateVaultKeyEnvelope(env)).toThrow(EnvelopeValidationError);
   });
 
   it('rejects undersized KDF memory before invoking Argon2', async () => {
@@ -298,7 +298,7 @@ describe('Flow A - initial vault creation', () => {
         ciphertext: toBase64Url(new Uint8Array(48)),
       },
     };
-    expect(() => validateVaultKeyEnvelope(env)).toThrow();
+    expect(() => validateVaultKeyEnvelope(env)).toThrow(EnvelopeValidationError);
   });
 
   it('rejects wrong nonce/ciphertext lengths in envelope', () => {
@@ -318,9 +318,9 @@ describe('Flow A - initial vault creation', () => {
         ciphertext: toBase64Url(new Uint8Array(48)),
       },
     };
-    expect(() => validateVaultKeyEnvelope(env1)).toThrow();
+    expect(() => validateVaultKeyEnvelope(env1)).toThrow(EnvelopeValidationError);
     const env2 = { ...env1, wrap: { ...env1.wrap, nonce: toBase64Url(new Uint8Array(24)), ciphertext: toBase64Url(new Uint8Array(32)) } };
-    expect(() => validateVaultKeyEnvelope(env2)).toThrow();
+    expect(() => validateVaultKeyEnvelope(env2)).toThrow(EnvelopeValidationError);
   });
 
   it('generateSalt respects length', () => {
