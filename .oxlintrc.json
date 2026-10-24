@@ -1,0 +1,36 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": ["typescript", "unicorn", "import", "vue", "node"],
+	"env": {
+		"node": true,
+		"browser": true,
+		"es2024": true
+	},
+	"ignorePatterns": [
+		"node_modules",
+		"dist",
+		"build",
+		"coverage",
+		".turbo",
+		"*.d.ts",
+		"*.d.mts",
+		"*.d.cts"
+	],
+	"overrides": [
+		{
+			"files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+			"rules": {
+				"no-console": "off"
+			}
+		},
+		{
+			"files": ["scripts/**"],
+			"rules": {
+				"no-console": "off"
+			}
+		}
+	],
+	"rules": {
+		"no-console": "warn"
+	}
+}

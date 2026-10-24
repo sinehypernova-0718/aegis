@@ -1,0 +1,24 @@
+{
+	"name": "@aegis/web",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Aegis Vue 3 web application.",
+	"license": "Apache-2.0",
+	"type": "module",
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"clean": "rimraf dist coverage",
+		"format": "biome format .",
+		"format:fix": "biome format . --write",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint . --fix",
+		"check": "biome check ."
+	},
+	"devDependencies": {
+		"@types/node": "24.19.2"
+	}
+}

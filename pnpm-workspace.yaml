@@ -1,0 +1,21 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+
+# Dependency resolution
+preferWorkspacePackages: true
+
+# Hoisting strategy for optimal node_modules structure
+shamefullyHoist: false
+
+# Link workspace packages
+linkWorkspacePackages: true
+
+# Install strategy
+autoInstallPeers: true
+
+onlyBuiltDependencies:
+  - esbuild

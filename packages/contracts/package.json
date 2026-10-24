@@ -1,0 +1,39 @@
+{
+	"name": "@aegis/contracts",
+	"version": "0.1.0",
+	"description": "Shared Zod schemas and API contracts for Aegis.",
+	"license": "Apache-2.0",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.cjs",
+			"default": "./dist/index.mjs"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "tsdown",
+		"dev": "tsdown --watch",
+		"typecheck": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
+		"clean": "rimraf dist coverage",
+		"format": "biome format .",
+		"format:fix": "biome format . --write",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint . --fix",
+		"check": "biome check ."
+	},
+	"devDependencies": {
+		"@types/node": "24.19.2"
+	}
+}
