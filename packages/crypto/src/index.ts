@@ -7,7 +7,12 @@ export type { CreateVaultKeyMaterialOptions } from './vault/create-vault-key-mat
 export { deriveKek, generateSalt } from './kdf/derive-key.js';
 export type { DeriveKekInput, DerivedKek } from './kdf/derive-key.js';
 
-export { KDF_DEFAULTS, KDF_MINIMUMS, KDF_MAXIMUMS, validateKdfParameters } from './kdf/parameters.js';
+export {
+	KDF_DEFAULTS,
+	KDF_MINIMUMS,
+	KDF_MAXIMUMS,
+	validateKdfParameters,
+} from './kdf/parameters.js';
 export type { KdfParameters } from './kdf/parameters.js';
 
 export { generateDek, DEK_LENGTH } from './keys/generate-dek.js';
@@ -20,20 +25,26 @@ export { createVaultKeyEnvelope } from './envelope/schema.js';
 export { validateVaultKeyEnvelope } from './envelope/validate-envelope.js';
 
 export type {
-  VaultKeyEnvelope,
-  VaultKeyEnvelopeKdf,
-  VaultKeyEnvelopeWrap,
-  KdfAlgorithm,
-  WrapAlgorithm,
+	VaultKeyEnvelope,
+	VaultKeyEnvelopeKdf,
+	VaultKeyEnvelopeWrap,
+	KdfAlgorithm,
+	WrapAlgorithm,
 } from './types.js';
 
-export { ENVELOPE_VERSION, KDF_ALGORITHM, WRAP_ALGORITHM, toBase64Url, fromBase64Url } from './types.js';
+export {
+	ENVELOPE_VERSION,
+	KDF_ALGORITHM,
+	WRAP_ALGORITHM,
+	toBase64Url,
+	fromBase64Url,
+} from './types.js';
 
 export {
-  CryptoError,
-  InvalidParametersError,
-  MalformedInputError,
-  UnsupportedVersionError,
-  AuthenticationError,
-  EnvelopeValidationError,
+	CryptoError,
+	InvalidParametersError,
+	MalformedInputError,
+	UnsupportedVersionError,
+	AuthenticationError,
+	EnvelopeValidationError,
 } from './errors.js';

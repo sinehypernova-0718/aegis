@@ -43,13 +43,13 @@ flowchart TD
 
 ## KDF parameters and bounds
 
-| Parameter | Default | Minimum | Maximum |
-| --- | --- | --- | --- |
-| `memoryKiB` | 65536 (64 MiB) | 65536 | 262144 (256 MiB) |
-| `passes` | 3 | 3 | 5 |
-| `parallelism` | 4 | 1 | 4 |
-| `tagLength` | 32 | 32 (exact, fixed) | 32 (exact, fixed) |
-| `saltLength` | 16 | 16 | 64 |
+| Parameter     | Default        | Minimum           | Maximum           |
+| ------------- | -------------- | ----------------- | ----------------- |
+| `memoryKiB`   | 65536 (64 MiB) | 65536             | 262144 (256 MiB)  |
+| `passes`      | 3              | 3                 | 5                 |
+| `parallelism` | 4              | 1                 | 4                 |
+| `tagLength`   | 32             | 32 (exact, fixed) | 32 (exact, fixed) |
+| `saltLength`  | 16             | 16                | 64                |
 
 Out-of-range or hostile persisted values are rejected before Argon2id runs.
 Values are never silently clamped.
@@ -60,20 +60,20 @@ Versioned JSON with base64url (no padding) binary fields:
 
 ```json
 {
-  "version": 1,
-  "kdf": {
-    "algorithm": "argon2id",
-    "salt": "<base64url, 16 bytes>",
-    "memoryKiB": 65536,
-    "passes": 3,
-    "parallelism": 4,
-    "tagLength": 32
-  },
-  "wrap": {
-    "algorithm": "xchacha20-poly1305",
-    "nonce": "<base64url, 24 bytes>",
-    "ciphertext": "<base64url, 32-byte DEK + 16-byte tag>"
-  }
+	"version": 1,
+	"kdf": {
+		"algorithm": "argon2id",
+		"salt": "<base64url, 16 bytes>",
+		"memoryKiB": 65536,
+		"passes": 3,
+		"parallelism": 4,
+		"tagLength": 32
+	},
+	"wrap": {
+		"algorithm": "xchacha20-poly1305",
+		"nonce": "<base64url, 24 bytes>",
+		"ciphertext": "<base64url, 32-byte DEK + 16-byte tag>"
+	}
 }
 ```
 
