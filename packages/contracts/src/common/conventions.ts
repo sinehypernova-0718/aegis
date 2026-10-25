@@ -36,12 +36,12 @@ export function boundedNonBlankString(minimum: number, maximum: number): z.ZodTy
 export function boundedArray<TSchema extends z.ZodType>(
 	item: TSchema,
 	maximum: number,
-): z.ZodType<unknown[], unknown[]> {
+): z.ZodArray<TSchema> {
 	return z.array(item).max(maximum);
 }
 
 export function strictObject<TShape extends z.ZodRawShape>(
 	shape: TShape,
-): z.ZodType<Record<string, unknown>, Record<string, unknown>> {
+): z.ZodObject<TShape, z.core.$strict> {
 	return z.object(shape).strict();
 }
