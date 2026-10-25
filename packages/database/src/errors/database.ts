@@ -8,10 +8,10 @@ export class DatabaseError extends Error {
 }
 
 export interface PostgresErrorLike {
-	code?: string;
-	constraint?: string;
-	detail?: string;
-	message?: string;
+	code?: string | undefined;
+	constraint?: string | undefined;
+	detail?: string | undefined;
+	message?: string | undefined;
 }
 
 export function asPostgresError(error: unknown): PostgresErrorLike | null {
@@ -27,17 +27,20 @@ export function asPostgresError(error: unknown): PostgresErrorLike | null {
 }
 
 export function mapDatabaseError(error: unknown): Error {
-	const pgError = asPostgresError(error);
-	if (pgError?.code === '23505') {
+	const postgresError = asPostgresError(error);
+	if (postgresError?.code === '23505') {
 		return new UniqueConstraintViolationError(
-			pgError.constraint
-				? `unique constraint violation: ${pgError.constraint}`
+			postgresError.constraint
+				? `unique constraint violation: ${postgresError.constraint}`
 				: 'unique constraint violation',
 		);
 	}
-	if (pgError?.code === '23503') {
+	if (postgresError?.code === '23503') {
 		return new DatabaseError('foreign key constraint violation');
 	}
-	if (error instanceof Error) return error;
-	return new DatabaseError('database operation failed');
+	if (error instanceof RecordNotFoundError) return error;
+	if (error instanceof UniqueConstraintViolationError) return error;
+	if (error instanceof DatabaseError) return error;
+	// Preserve the original cause for debugging without leaking raw SQL/connection details.
+	return new DatabaseError('database operation failed', { cause: error });
 }

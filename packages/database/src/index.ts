@@ -15,3 +15,7 @@ export { DrizzleVaultRepository } from './repositories/vaults.js';
 export * from './schema/index.js';
 export type { TransactionCallback } from './transactions/index.js';
 export { withDatabaseTransaction } from './transactions/index.js';
+
+export { DrizzleVaultRecordRepository } from './repositories/vault-records.js';
+export type { VaultRecord, VaultRecordRepository } from './repositories/vault-records.js';
+

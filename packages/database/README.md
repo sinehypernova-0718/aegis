@@ -322,7 +322,7 @@ Database errors must be mapped to stable internal errors without leaking:
 
 ## 7. Implementation checklist
 
-Status: 0/7
+Status: 7/7 implementation code added; local PostgreSQL integration verification pending
 1. Read-only audit
    - Inspect repository tree, package manifests, contracts, crypto exports, tests, workspace scripts, and HLD.
    - Status: in progress / baseline recorded in this document.
@@ -459,3 +459,4 @@ Repositories return storage-oriented representations, never domain business obje
 ### Approval status
 
 Status: proposed, pending explicit approval before any implementation.
+
