@@ -1,6 +1,6 @@
 ﻿import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-export const vaults: any = pgTable(
+export const vaults: ReturnType<typeof pgTable> = pgTable(
 	'vaults',
 	{
 		id: uuid('id').primaryKey(),
@@ -10,4 +10,4 @@ export const vaults: any = pgTable(
 		updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull(),
 	},
 	(table) => [index('vaults_status_idx').on(table.status)],
-);
+) as unknown as ReturnType<typeof pgTable>;

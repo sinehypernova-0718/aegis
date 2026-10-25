@@ -6,7 +6,7 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 	},
 });
 
-export const vaultRecords: any = pgTable(
+export const vaultRecords: ReturnType<typeof pgTable> = pgTable(
 	'vault_records',
 	{
 		id: uuid('id').primaryKey(),
@@ -24,4 +24,4 @@ export const vaultRecords: any = pgTable(
 		index('vault_records_vault_type_idx').on(table.vaultId, table.recordType),
 		index('vault_records_created_at_idx').on(table.createdAt),
 	],
-);
+) as unknown as ReturnType<typeof pgTable>;

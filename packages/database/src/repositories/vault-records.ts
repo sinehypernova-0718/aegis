@@ -1,4 +1,4 @@
-﻿import { eq } from 'drizzle-orm';
+﻿import { eq, type SQLWrapper } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
@@ -30,7 +30,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 	async createRecord(input: VaultRecord): Promise<VaultRecord> {
 		try {
 			const rows = await this.database
-				.insert(vaultRecords as any)
+				.insert(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
 				.values({
 					id: input.id,
 					vaultId: input.vaultId,
@@ -52,18 +52,22 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 	}
 
 	async getRecordById(id: string): Promise<VaultRecord | null> {
-		const [row] = await this.database
-			.select()
-			.from(vaultRecords as any)
-			.where(eq(vaultRecords.id as any, id))
-			.limit(1);
-		return row ? mapVaultRecord(row) : null;
+		try {
+			const [row] = await this.database
+				.select()
+				.from(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
+				.where(eq(vaultRecords.id as SQLWrapper, id))
+				.limit(1);
+			return row ? mapVaultRecord(row) : null;
+		} catch (error) {
+			throw mapDatabaseError(error);
+		}
 	}
 
 	async updateRecord(input: VaultRecord): Promise<VaultRecord> {
 		try {
 			const rows = await this.database
-				.update(vaultRecords as any)
+				.update(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
 				.set({
 					recordType: input.recordType,
 					encryptionVersion: input.encryptionVersion,
@@ -72,7 +76,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 					updatedAt: input.updatedAt,
 					deletedAt: input.deletedAt ?? null,
 				})
-				.where(eq(vaultRecords.id as any, input.id))
+				.where(eq(vaultRecords.id as SQLWrapper, input.id))
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError(`vault record not found: ${input.id}`);
@@ -83,7 +87,13 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 	}
 
 	async deleteRecord(id: string): Promise<void> {
-		await this.database.delete(vaultRecords as any).where(eq(vaultRecords.id as any, id));
+		try {
+			await this.database
+				.delete(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
+				.where(eq(vaultRecords.id as SQLWrapper, id));
+		} catch (error) {
+			throw mapDatabaseError(error);
+		}
 	}
 }
 

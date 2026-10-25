@@ -1,4 +1,4 @@
-﻿import { eq } from 'drizzle-orm';
+﻿import { eq, type SQLWrapper } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
@@ -42,7 +42,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 	async createVault(input: CreateVaultInput): Promise<CreateVaultInput> {
 		try {
 			const rows = await this.database
-				.insert(vaults as any)
+				.insert(vaults as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
 				.values({
 					id: input.id,
 					status: input.status,
@@ -60,13 +60,17 @@ export class DrizzleVaultRepository implements VaultRepository {
 	}
 
 	async getVaultById(id: string): Promise<CreateVaultInput | null> {
-		const rows = await this.database
-			.select()
-			.from(vaults as any)
-			.where(eq(vaults.id as any, id))
-			.limit(1);
-		const row = Array.isArray(rows) ? rows[0] : null;
-		return row ? mapVaultRow(row) : null;
+		try {
+			const rows = await this.database
+				.select()
+				.from(vaults as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
+				.where(eq(vaults.id as SQLWrapper, id))
+				.limit(1);
+			const row = Array.isArray(rows) ? rows[0] : null;
+			return row ? mapVaultRow(row) : null;
+		} catch (error) {
+			throw mapDatabaseError(error);
+		}
 	}
 
 	async updateVaultStatus(
@@ -76,9 +80,9 @@ export class DrizzleVaultRepository implements VaultRepository {
 	): Promise<CreateVaultInput> {
 		try {
 			const rows = await this.database
-				.update(vaults as any)
+				.update(vaults as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
 				.set({ status, updatedAt })
-				.where(eq(vaults.id as any, id))
+				.where(eq(vaults.id as SQLWrapper, id))
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError(`vault not found: ${id}`);
@@ -103,7 +107,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 		try {
 			return await withDatabaseTransaction(this.database, async (transaction) => {
 				const vaultRows = await transaction
-					.insert(vaults as any)
+					.insert(vaults as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
 					.values({
 						id: vault.id,
 						status: vault.status,
@@ -116,16 +120,22 @@ export class DrizzleVaultRepository implements VaultRepository {
 				if (!vaultRow) throw new RecordNotFoundError('vault record was not created');
 
 				for (const envelope of envelopes) {
-					await transaction.insert(vaultKeyEnvelopes as any).values({
-						id: envelope.id,
-						vaultId: envelope.vaultId,
-						purpose: envelope.purpose,
-						envelopeVersion: envelope.envelopeVersion,
-						envelope: envelope.envelope,
-						createdAt: envelope.createdAt,
-						rotatedAt: envelope.rotatedAt ?? null,
-						revokedAt: envelope.revokedAt ?? null,
-					});
+					await transaction
+						.insert(
+							vaultKeyEnvelopes as unknown as ReturnType<
+								typeof import('drizzle-orm/pg-core').pgTable
+							>,
+						)
+						.values({
+							id: envelope.id,
+							vaultId: envelope.vaultId,
+							purpose: envelope.purpose,
+							envelopeVersion: envelope.envelopeVersion,
+							envelope: envelope.envelope,
+							createdAt: envelope.createdAt,
+							rotatedAt: envelope.rotatedAt ?? null,
+							revokedAt: envelope.revokedAt ?? null,
+						});
 				}
 
 				return mapVaultRow(vaultRow);
