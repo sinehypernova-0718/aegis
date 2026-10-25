@@ -27,7 +27,7 @@ describe('@aegis/database client', () => {
 });
 
 describe('@aegis/database schema', () => {
-	it('exports core vault tables', () => {
+	it('exports typed table accessors', () => {
 		expect(vaults).toBeDefined();
 		expect(vaultRecords).toBeDefined();
 	});

@@ -1,5 +1,14 @@
-﻿import { pgTable, text, timestamp, uuid, integer, jsonb, index, uniqueIndex } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+﻿import { sql } from 'drizzle-orm';
+import {
+	index,
+	integer,
+	jsonb,
+	pgTable,
+	text,
+	timestamp,
+	uniqueIndex,
+	uuid,
+} from 'drizzle-orm/pg-core';
 
 export const vaultKeyEnvelopes: any = pgTable(
 	'vault_key_envelopes',

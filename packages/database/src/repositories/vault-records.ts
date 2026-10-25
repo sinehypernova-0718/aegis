@@ -1,9 +1,9 @@
 ﻿import { eq } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
-import { vaultRecords } from '../schema/vault-records.js';
-import { RecordNotFoundError } from '../errors/repository.js';
 import { mapDatabaseError } from '../errors/database.js';
+import { RecordNotFoundError } from '../errors/repository.js';
+import { vaultRecords } from '../schema/vault-records.js';
 
 export interface VaultRecord {
 	id: string;
@@ -52,7 +52,11 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 	}
 
 	async getRecordById(id: string): Promise<VaultRecord | null> {
-		const [row] = await this.database.select().from(vaultRecords as any).where(eq(vaultRecords.id as any, id)).limit(1);
+		const [row] = await this.database
+			.select()
+			.from(vaultRecords as any)
+			.where(eq(vaultRecords.id as any, id))
+			.limit(1);
 		return row ? mapVaultRecord(row) : null;
 	}
 

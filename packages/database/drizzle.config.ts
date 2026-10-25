@@ -12,7 +12,10 @@ function readEnvFile(path: string): Record<string, string> {
 			const separator = trimmed.indexOf('=');
 			if (separator === -1) continue;
 			const key = trimmed.slice(0, separator).trim();
-			const value = trimmed.slice(separator + 1).trim().replace(/^['"]|['"]$/g, '');
+			const value = trimmed
+				.slice(separator + 1)
+				.trim()
+				.replace(/^['"]|['"]$/g, '');
 			if (key !== '') values[key] = value;
 		}
 		return values;

@@ -1,4 +1,4 @@
-﻿import { pgTable, text, timestamp, uuid, integer, index } from 'drizzle-orm/pg-core';
+﻿import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 export const vaults: any = pgTable(
 	'vaults',
