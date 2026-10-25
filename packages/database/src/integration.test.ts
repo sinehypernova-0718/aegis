@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+﻿import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
@@ -80,6 +80,7 @@ describe.skipIf(!databaseUrl)('PostgreSQL repository behavior', () => {
 			const now = new Date().toISOString();
 			const vaultId = randomUUID();
 			const envelopeId = randomUUID();
+			const secondVaultId = randomUUID();
 			await repository.initializeVaultWithKeyEnvelopes(
 				{
 					id: vaultId,
@@ -112,7 +113,7 @@ describe.skipIf(!databaseUrl)('PostgreSQL repository behavior', () => {
 					[
 						{
 							id: envelopeId,
-							vaultId: randomUUID(),
+							vaultId: secondVaultId,
 							purpose: 'primary_windows',
 							envelopeVersion: 1,
 							envelope: { version: 1 },
