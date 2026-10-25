@@ -104,7 +104,7 @@ describe.skipIf(!databaseUrl)('PostgreSQL repository behavior', () => {
 			await expect(
 				repository.initializeVaultWithKeyEnvelopes(
 					{
-						id: randomUUID(),
+						id: secondVaultId,
 						status: 'active',
 						encryptionFormatVersion: 1,
 						createdAt: now,
