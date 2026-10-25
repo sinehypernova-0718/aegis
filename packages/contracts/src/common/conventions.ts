@@ -40,8 +40,6 @@ export function boundedArray<TSchema extends z.ZodType>(
 	return z.array(item).max(maximum);
 }
 
-export function strictObject<TShape extends z.ZodRawShape>(
-	shape: TShape,
-): z.ZodObject<TShape> {
+export function strictObject<TShape extends z.ZodRawShape>(shape: TShape): z.ZodObject<TShape> {
 	return z.object(shape).strict();
 }
