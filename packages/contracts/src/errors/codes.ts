@@ -11,6 +11,6 @@ export const ERROR_CODES = [
 	'INTERNAL_ERROR',
 ] as const;
 
-export const ErrorCodeSchema: z.ZodType<ErrorCode> = z.enum(ERROR_CODES);
+export const ErrorCodeSchema = z.enum(ERROR_CODES);
 
-export type ErrorCode = (typeof ERROR_CODES)[number];
+export type ErrorCode = z.infer<typeof ErrorCodeSchema>;

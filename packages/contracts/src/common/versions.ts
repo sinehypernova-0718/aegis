@@ -7,4 +7,4 @@ export const CONTRACT_VERSION = 1 as const;
 export const ContractVersionSchema: z.ZodLiteral<typeof CONTRACT_VERSION> =
 	z.literal(CONTRACT_VERSION);
 
-export type ContractVersion = typeof CONTRACT_VERSION;
+export type ContractVersion = z.infer<typeof ContractVersionSchema>;

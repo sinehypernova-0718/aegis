@@ -2,7 +2,7 @@ import type { ErrorCode } from './codes.js';
 
 // Safe, generic messages only. These must never include request data, secrets,
 // stack traces, or implementation details.
-export const SAFE_ERROR_MESSAGES: Record<ErrorCode, string> = {
+export const SAFE_ERROR_MESSAGES: Readonly<Record<ErrorCode, string>> = {
 	VALIDATION_ERROR: 'The request is invalid.',
 	UNAUTHENTICATED: 'Authentication is required.',
 	FORBIDDEN: 'You do not have permission to perform this action.',
@@ -12,6 +12,8 @@ export const SAFE_ERROR_MESSAGES: Record<ErrorCode, string> = {
 	RATE_LIMITED: 'Too many requests. Please try again later.',
 	INTERNAL_ERROR: 'An internal error occurred.',
 };
+
+Object.freeze(SAFE_ERROR_MESSAGES);
 
 export function safeMessageForCode(code: ErrorCode): string {
 	return SAFE_ERROR_MESSAGES[code];

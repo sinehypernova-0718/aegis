@@ -6,17 +6,24 @@ export type { EntityId } from './common/ids.js';
 export { EntityIdSchema } from './common/ids.js';
 export type { IsoUtcTimestamp } from './common/timestamps.js';
 export { IsoUtcTimestampSchema } from './common/timestamps.js';
-export type { PaginationQuery } from './common/pagination.js';
 export {
 	PaginationLimitSchema,
 	PaginationLimitWithDefaultSchema,
 	PaginationQuerySchema,
 	OpaqueCursorSchema,
 } from './common/pagination.js';
+export type {
+	PaginationQuery,
+	PaginationQueryInput,
+} from './common/pagination.js';
 export {
 	PAGINATION_DEFAULT_LIMIT,
 	PAGINATION_MAX_LIMIT,
 	CURSOR_MAX_LENGTH,
+	boundedString,
+	boundedNonBlankString,
+	boundedArray,
+	strictObject,
 } from './common/conventions.js';
 export { ContractVersionSchema, CONTRACT_VERSION } from './common/versions.js';
 export type { ContractVersion } from './common/versions.js';
