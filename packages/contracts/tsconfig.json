@@ -6,8 +6,7 @@
 		"outDir": "./dist",
 		"composite": true,
 		"declaration": true,
-		"isolatedDeclarations": true,
-		"exactOptionalPropertyTypes": false
+		"isolatedDeclarations": true
 	},
 	"include": ["src"]
 }
