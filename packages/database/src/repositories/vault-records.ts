@@ -56,7 +56,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 			const [row] = await this.database
 				.select()
 				.from(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
-				.where(eq(vaultRecords.id as SQLWrapper, id))
+				.where(eq(vaultRecords.id!, id))
 				.limit(1);
 			return row ? mapVaultRecord(row) : null;
 		} catch (error) {
@@ -76,7 +76,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 					updatedAt: input.updatedAt,
 					deletedAt: input.deletedAt ?? null,
 				})
-				.where(eq(vaultRecords.id as SQLWrapper, input.id))
+				.where(eq(vaultRecords.id!, input.id))
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError(`vault record not found: ${input.id}`);
@@ -90,7 +90,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 		try {
 			await this.database
 				.delete(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
-				.where(eq(vaultRecords.id as SQLWrapper, id));
+				.where(eq(vaultRecords.id!, id));
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}

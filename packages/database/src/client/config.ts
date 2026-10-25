@@ -5,6 +5,15 @@
 	connectionTimeoutMillis?: number;
 }
 
+function validateNumber(value: number, name: string, minimum: number, maximum: number): void {
+	if (!Number.isFinite(value)) {
+		throw new Error(`${name} must be a finite number`);
+	}
+	if (value < minimum || value > maximum) {
+		throw new Error(`${name} must be between ${minimum} and ${maximum}`);
+	}
+}
+
 export function readDatabaseClientConfig(
 	environment: NodeJS.ProcessEnv = process.env,
 ): DatabaseClientConfig {
@@ -18,13 +27,19 @@ export function readDatabaseClientConfig(
 	};
 
 	if (environment.DATABASE_POOL_MAX !== undefined) {
-		config.maxConnections = Number(environment.DATABASE_POOL_MAX);
+		const value = Number(environment.DATABASE_POOL_MAX);
+		validateNumber(value, 'DATABASE_POOL_MAX', 1, 1000);
+		config.maxConnections = value;
 	}
 	if (environment.DATABASE_IDLE_TIMEOUT_MS !== undefined) {
-		config.idleTimeoutMillis = Number(environment.DATABASE_IDLE_TIMEOUT_MS);
+		const value = Number(environment.DATABASE_IDLE_TIMEOUT_MS);
+		validateNumber(value, 'DATABASE_IDLE_TIMEOUT_MS', 1000, 600000);
+		config.idleTimeoutMillis = value;
 	}
 	if (environment.DATABASE_CONNECT_TIMEOUT_MS !== undefined) {
-		config.connectionTimeoutMillis = Number(environment.DATABASE_CONNECT_TIMEOUT_MS);
+		const value = Number(environment.DATABASE_CONNECT_TIMEOUT_MS);
+		validateNumber(value, 'DATABASE_CONNECT_TIMEOUT_MS', 1000, 60000);
+		config.connectionTimeoutMillis = value;
 	}
 
 	return config;

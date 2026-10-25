@@ -459,4 +459,3 @@ Repositories return storage-oriented representations, never domain business obje
 ### Approval status
 
 Status: proposed, pending explicit approval before any implementation.
-

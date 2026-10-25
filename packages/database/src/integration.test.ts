@@ -1,4 +1,5 @@
 ﻿import { randomUUID } from 'node:crypto';
+import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -6,10 +7,12 @@ import {
 	DrizzleVaultRecordRepository,
 	DrizzleVaultRepository,
 	UniqueConstraintViolationError,
+	withDatabaseTransaction,
 } from '../src/index.js';
 
-const databaseUrl = process.env.DATABASE_URL;
+import { vaults } from '../src/schema/vaults.js';
 
+const databaseUrl = process.env.DATABASE_URL;
 describe.skipIf(!databaseUrl)('PostgreSQL repository behavior', () => {
 	it('creates and reads a vault with required key envelopes', async () => {
 		const client = createDatabaseClient({ connectionString: databaseUrl as string });
@@ -171,6 +174,36 @@ describe.skipIf(!databaseUrl)('PostgreSQL repository behavior', () => {
 
 			await expect(recordRepository.getRecordById(randomUUID())).resolves.toBeNull();
 			await recordRepository.deleteRecord(record.id);
+		} finally {
+			await client.close();
+		}
+	});
+});
+
+describe.skipIf(!databaseUrl)('PostgreSQL transaction rollback', () => {
+	it('rolls back a vault insert when an operation fails after the insert', async () => {
+		const client = createDatabaseClient({ connectionString: databaseUrl as string });
+		try {
+			const now = new Date().toISOString();
+			const vaultId = randomUUID();
+			await expect(
+				withDatabaseTransaction(client.database, async (transaction) => {
+					await transaction
+						.insert(vaults)
+						.values({
+							id: vaultId,
+							status: 'active',
+							encryptionFormatVersion: 1,
+							createdAt: now,
+							updatedAt: now,
+						})
+						.returning();
+					throw new Error('forced transaction failure');
+				}),
+			).rejects.toThrow('forced transaction failure');
+
+			const rows = await client.database.select().from(vaults).where(eq(vaults.id!, vaultId));
+			expect(rows).toHaveLength(0);
 		} finally {
 			await client.close();
 		}
