@@ -8,6 +8,8 @@ import {
 	TitleSchema,
 	ShortTextSchema,
 	LongTextSchema,
+	LabelSchema,
+	ClearableStringSchema,
 } from './index.js';
 
 describe('@aegis/contracts common primitives', () => {
@@ -65,5 +67,16 @@ describe('@aegis/contracts common primitives', () => {
 	it('rejects unknown keys and oversized cursors', () => {
 		expect(() => PaginationQuerySchema.parse({ unknown: true })).toThrow();
 		expect(() => PaginationQuerySchema.parse({ cursor: 'a'.repeat(513) })).toThrow();
+	});
+
+	it('validates labels and rejects blank labels', () => {
+		expect(LabelSchema.parse('billing')).toBe('billing');
+		expect(() => LabelSchema.parse('   ')).toThrow();
+	});
+
+	it('accepts null but rejects undefined and blank clearable strings', () => {
+		expect(ClearableStringSchema.parse(null)).toBeNull();
+		expect(() => ClearableStringSchema.parse(undefined)).toThrow();
+		expect(() => ClearableStringSchema.parse('   ')).toThrow();
 	});
 });

@@ -28,10 +28,10 @@ export const ErrorResponseSchema: z.ZodType<
 		details?: Array<{ path: string; message: string }> | undefined;
 	},
 	{
-		code: any;
-		message: any;
-		requestId?: any;
-		details?: any;
+		code: unknown;
+		message: unknown;
+		requestId?: unknown;
+		details?: unknown;
 	}
 > = z
 	.object({

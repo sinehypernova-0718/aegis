@@ -19,7 +19,10 @@ export const LongTextSchema: z.ZodType<string> = boundedNonBlankString(1, LONG_T
 // A string that is explicitly either present or cleared. Use `.optional()` to
 // represent "leave unchanged"; use `.nullable().optional()` to represent
 // "clear when null".
-export const ClearableStringSchema: z.ZodType<string | null> = boundedNonBlankString(
+// A required, nullable string: `null` clears the field. Use `.optional()` to
+// represent "leave unchanged", and `.nullable().optional()` only when an
+// omitted field (as opposed to an explicit null) must be valid.
+export const ClearableStringSchema: z.ZodType<string | null, string | null> = boundedNonBlankString(
 	1,
 	LONG_TEXT_MAX_LENGTH,
 ).nullable();

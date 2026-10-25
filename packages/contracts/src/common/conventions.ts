@@ -42,6 +42,6 @@ export function boundedArray<TSchema extends z.ZodType>(
 
 export function strictObject<TShape extends z.ZodRawShape>(
 	shape: TShape,
-): z.ZodObject<TShape, z.core.$strict> {
+): z.ZodObject<TShape> {
 	return z.object(shape).strict();
 }
