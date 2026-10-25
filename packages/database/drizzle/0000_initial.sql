@@ -1,4 +1,4 @@
-﻿CREATE TABLE "vaults" (
+CREATE TABLE "vaults" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"status" text NOT NULL,
 	"encryption_format_version" integer NOT NULL,

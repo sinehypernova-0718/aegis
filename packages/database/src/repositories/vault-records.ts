@@ -1,4 +1,4 @@
-﻿import { eq, type SQLWrapper } from 'drizzle-orm';
+import { eq, type SQLWrapper } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';

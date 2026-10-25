@@ -1,4 +1,4 @@
-﻿import { RecordNotFoundError, UniqueConstraintViolationError } from './repository.js';
+import { RecordNotFoundError, UniqueConstraintViolationError } from './repository.js';
 
 export class DatabaseError extends Error {
 	constructor(message: string, options?: ErrorOptions) {

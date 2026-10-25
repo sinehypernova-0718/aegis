@@ -1,4 +1,4 @@
-﻿export const packageName = '@aegis/database' as const;
+export const packageName = '@aegis/database' as const;
 
 export type { DatabaseClientConfig } from './client/config.js';
 export { readDatabaseClientConfig } from './client/config.js';

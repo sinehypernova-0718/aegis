@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { mapDatabaseError, UniqueConstraintViolationError } from '../src/index.js';
 

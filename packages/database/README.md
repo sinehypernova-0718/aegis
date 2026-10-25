@@ -1,4 +1,4 @@
-﻿# @aegis/database
+# @aegis/database
 
 Security-sensitive persistence subsystem for Aegis.
 

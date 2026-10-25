@@ -1,4 +1,4 @@
-﻿export interface DatabaseClientConfig {
+export interface DatabaseClientConfig {
 	connectionString: string;
 	maxConnections?: number;
 	idleTimeoutMillis?: number;

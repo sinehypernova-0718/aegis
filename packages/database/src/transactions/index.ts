@@ -1,4 +1,4 @@
-﻿import { type Database } from '../client/database.js';
+import { type Database } from '../client/database.js';
 
 export type DatabaseTransaction = Parameters<Database['transaction']>[0] extends (
 	transaction: infer T,
