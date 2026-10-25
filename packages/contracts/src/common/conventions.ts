@@ -22,21 +22,26 @@ export const REQUEST_ID_MAX_LENGTH = 128 as const;
 
 // Reusable boundary helpers. Strictness stays visible at call sites because
 // `strictObject` is the only object helper and always enables `.strict()`.
-export function boundedString(minimum: number, maximum: number) {
+export function boundedString(minimum: number, maximum: number): z.ZodType<string, string> {
 	return z.string().min(minimum).max(maximum);
 }
 
-export function boundedNonBlankString(minimum: number, maximum: number) {
+export function boundedNonBlankString(minimum: number, maximum: number): z.ZodType<string, string> {
 	return boundedString(minimum, maximum).refine(
 		(value) => value.trim().length >= minimum,
 		'must contain non-whitespace characters',
 	);
 }
 
-export function boundedArray<TSchema extends z.ZodType>(item: TSchema, maximum: number) {
+export function boundedArray<TSchema extends z.ZodType>(
+	item: TSchema,
+	maximum: number,
+): z.ZodType<unknown[], unknown[]> {
 	return z.array(item).max(maximum);
 }
 
-export function strictObject<TShape extends z.ZodRawShape>(shape: TShape) {
+export function strictObject<TShape extends z.ZodRawShape>(
+	shape: TShape,
+): z.ZodType<Record<string, unknown>, Record<string, unknown>> {
 	return z.object(shape).strict();
 }

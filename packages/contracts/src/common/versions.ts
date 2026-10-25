@@ -4,7 +4,6 @@ import { z } from 'zod';
 // add a version field to every contract by default.
 export const CONTRACT_VERSION = 1 as const;
 
-export const ContractVersionSchema: z.ZodLiteral<typeof CONTRACT_VERSION> =
-	z.literal(CONTRACT_VERSION);
+export const ContractVersionSchema: z.ZodType<ContractVersion> = z.literal(CONTRACT_VERSION);
 
-export type ContractVersion = z.infer<typeof ContractVersionSchema>;
+export type ContractVersion = typeof CONTRACT_VERSION;

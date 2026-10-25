@@ -5,7 +5,9 @@
 		"rootDir": "./src",
 		"outDir": "./dist",
 		"composite": true,
-		"declaration": true
+		"declaration": true,
+		"isolatedDeclarations": true,
+		"exactOptionalPropertyTypes": false
 	},
 	"include": ["src"]
 }
