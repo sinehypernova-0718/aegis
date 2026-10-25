@@ -28,10 +28,10 @@ export const ErrorResponseSchema: z.ZodType<
 		details?: Array<{ path: string; message: string }> | undefined;
 	},
 	{
-		code: unknown;
-		message: unknown;
-		requestId?: unknown;
-		details?: unknown;
+		code: (typeof ERROR_CODES)[number];
+		message: string;
+		requestId?: string | undefined;
+		details?: Array<{ path: string; message: string }> | undefined;
 	}
 > = z
 	.object({
@@ -44,3 +44,4 @@ export const ErrorResponseSchema: z.ZodType<
 
 export type ErrorDetail = z.infer<typeof ErrorDetailSchema>;
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
+export type ErrorResponseInput = z.input<typeof ErrorResponseSchema>;
