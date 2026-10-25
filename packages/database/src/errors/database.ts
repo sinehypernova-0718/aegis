@@ -17,13 +17,30 @@ export interface PostgresErrorLike {
 export function asPostgresError(error: unknown): PostgresErrorLike | null {
 	if (typeof error !== 'object' || error === null) return null;
 	const candidate = error as Record<string, unknown>;
-	if (typeof candidate.code !== 'string' && typeof candidate.message !== 'string') return null;
-	return {
-		code: typeof candidate.code === 'string' ? candidate.code : undefined,
-		constraint: typeof candidate.constraint === 'string' ? candidate.constraint : undefined,
-		detail: typeof candidate.detail === 'string' ? candidate.detail : undefined,
-		message: typeof candidate.message === 'string' ? candidate.message : undefined,
-	} as PostgresErrorLike;
+
+	// Check the error itself first
+	const code = typeof candidate.code === 'string' ? candidate.code : undefined;
+	const constraint = typeof candidate.constraint === 'string' ? candidate.constraint : undefined;
+	const detail = typeof candidate.detail === 'string' ? candidate.detail : undefined;
+	const message = typeof candidate.message === 'string' ? candidate.message : undefined;
+
+	// If we found a code, return it
+	if (code) {
+		return { code, constraint, detail, message };
+	}
+
+	// Otherwise, check the cause chain (e.g., DrizzleQueryError wraps pg error in cause)
+	const cause = candidate.cause;
+	if (typeof cause === 'object' && cause !== null) {
+		return asPostgresError(cause);
+	}
+
+	// If no code found but has message, return what we have
+	if (message) {
+		return { code: undefined, constraint, detail, message };
+	}
+
+	return null;
 }
 
 export function mapDatabaseError(error: unknown): Error {
