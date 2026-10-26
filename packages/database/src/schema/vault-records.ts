@@ -1,4 +1,5 @@
 import { customType, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import type { PgTable } from 'drizzle-orm/pg-core';
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 	dataType() {
@@ -6,7 +7,7 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 	},
 });
 
-export const vaultRecords: ReturnType<typeof pgTable> = pgTable(
+const vaultRecordsTable: PgTable = pgTable(
 	'vault_records',
 	{
 		id: uuid('id').primaryKey(),
@@ -24,4 +25,8 @@ export const vaultRecords: ReturnType<typeof pgTable> = pgTable(
 		index('vault_records_vault_type_idx').on(table.vaultId, table.recordType),
 		index('vault_records_created_at_idx').on(table.createdAt),
 	],
-) as unknown as ReturnType<typeof pgTable>;
+);
+
+export const vaultRecords: PgTable = vaultRecordsTable;
+
+export type VaultRecordsTable = typeof vaultRecordsTable;

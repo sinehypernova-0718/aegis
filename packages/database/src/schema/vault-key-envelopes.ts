@@ -9,8 +9,9 @@ import {
 	uniqueIndex,
 	uuid,
 } from 'drizzle-orm/pg-core';
+import type { PgTable } from 'drizzle-orm/pg-core';
 
-export const vaultKeyEnvelopes: ReturnType<typeof pgTable> = pgTable(
+const vaultKeyEnvelopesTable: PgTable = pgTable(
 	'vault_key_envelopes',
 	{
 		id: uuid('id').primaryKey(),
@@ -28,4 +29,8 @@ export const vaultKeyEnvelopes: ReturnType<typeof pgTable> = pgTable(
 			.on(table.vaultId, table.purpose)
 			.where(sql`revoked_at is null`),
 	],
-) as unknown as ReturnType<typeof pgTable>;
+);
+
+export const vaultKeyEnvelopes: PgTable = vaultKeyEnvelopesTable;
+
+export type VaultKeyEnvelopesTable = typeof vaultKeyEnvelopesTable;

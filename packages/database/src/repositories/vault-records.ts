@@ -1,4 +1,4 @@
-import { eq, type SQLWrapper } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
@@ -30,7 +30,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 	async createRecord(input: VaultRecord): Promise<VaultRecord> {
 		try {
 			const rows = await this.database
-				.insert(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
+				.insert(vaultRecords)
 				.values({
 					id: input.id,
 					vaultId: input.vaultId,
@@ -55,8 +55,8 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 		try {
 			const [row] = await this.database
 				.select()
-				.from(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
-				.where(eq(vaultRecords.id!, id))
+				.from(vaultRecords)
+				.where(eq(vaultRecords.id, id))
 				.limit(1);
 			return row ? mapVaultRecord(row) : null;
 		} catch (error) {
@@ -67,7 +67,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 	async updateRecord(input: VaultRecord): Promise<VaultRecord> {
 		try {
 			const rows = await this.database
-				.update(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
+				.update(vaultRecords)
 				.set({
 					recordType: input.recordType,
 					encryptionVersion: input.encryptionVersion,
@@ -76,7 +76,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 					updatedAt: input.updatedAt,
 					deletedAt: input.deletedAt ?? null,
 				})
-				.where(eq(vaultRecords.id!, input.id))
+				.where(eq(vaultRecords.id, input.id))
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError(`vault record not found: ${input.id}`);
@@ -89,8 +89,8 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 	async deleteRecord(id: string): Promise<void> {
 		try {
 			await this.database
-				.delete(vaultRecords as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
-				.where(eq(vaultRecords.id!, id));
+				.delete(vaultRecords)
+				.where(eq(vaultRecords.id, id));
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}

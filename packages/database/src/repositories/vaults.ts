@@ -1,4 +1,4 @@
-import { eq, type SQLWrapper } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
@@ -42,7 +42,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 	async createVault(input: CreateVaultInput): Promise<CreateVaultInput> {
 		try {
 			const rows = await this.database
-				.insert(vaults as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
+				.insert(vaults)
 				.values({
 					id: input.id,
 					status: input.status,
@@ -63,8 +63,8 @@ export class DrizzleVaultRepository implements VaultRepository {
 		try {
 			const rows = await this.database
 				.select()
-				.from(vaults as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
-				.where(eq(vaults.id!, id))
+				.from(vaults)
+				.where(eq(vaults.id, id))
 				.limit(1);
 			const row = Array.isArray(rows) ? rows[0] : null;
 			return row ? mapVaultRow(row) : null;
@@ -80,9 +80,9 @@ export class DrizzleVaultRepository implements VaultRepository {
 	): Promise<CreateVaultInput> {
 		try {
 			const rows = await this.database
-				.update(vaults as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
+				.update(vaults)
 				.set({ status, updatedAt })
-				.where(eq(vaults.id!, id))
+				.where(eq(vaults.id, id))
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError(`vault not found: ${id}`);
@@ -107,7 +107,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 		try {
 			return await withDatabaseTransaction(this.database, async (transaction) => {
 				const vaultRows = await transaction
-					.insert(vaults as unknown as ReturnType<typeof import('drizzle-orm/pg-core').pgTable>)
+					.insert(vaults)
 					.values({
 						id: vault.id,
 						status: vault.status,
@@ -121,11 +121,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 
 				for (const envelope of envelopes) {
 					await transaction
-						.insert(
-							vaultKeyEnvelopes as unknown as ReturnType<
-								typeof import('drizzle-orm/pg-core').pgTable
-							>,
-						)
+						.insert(vaultKeyEnvelopes)
 						.values({
 							id: envelope.id,
 							vaultId: envelope.vaultId,
