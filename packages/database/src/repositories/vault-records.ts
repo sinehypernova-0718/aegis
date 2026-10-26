@@ -88,9 +88,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 
 	async deleteRecord(id: string): Promise<void> {
 		try {
-			await this.database
-				.delete(vaultRecords)
-				.where(eq(vaultRecords.id, id));
+			await this.database.delete(vaultRecords).where(eq(vaultRecords.id, id));
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}

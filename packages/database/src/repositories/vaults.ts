@@ -61,11 +61,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 
 	async getVaultById(id: string): Promise<CreateVaultInput | null> {
 		try {
-			const rows = await this.database
-				.select()
-				.from(vaults)
-				.where(eq(vaults.id, id))
-				.limit(1);
+			const rows = await this.database.select().from(vaults).where(eq(vaults.id, id)).limit(1);
 			const row = Array.isArray(rows) ? rows[0] : null;
 			return row ? mapVaultRow(row) : null;
 		} catch (error) {
@@ -120,18 +116,16 @@ export class DrizzleVaultRepository implements VaultRepository {
 				if (!vaultRow) throw new RecordNotFoundError('vault record was not created');
 
 				for (const envelope of envelopes) {
-					await transaction
-						.insert(vaultKeyEnvelopes)
-						.values({
-							id: envelope.id,
-							vaultId: envelope.vaultId,
-							purpose: envelope.purpose,
-							envelopeVersion: envelope.envelopeVersion,
-							envelope: envelope.envelope,
-							createdAt: envelope.createdAt,
-							rotatedAt: envelope.rotatedAt ?? null,
-							revokedAt: envelope.revokedAt ?? null,
-						});
+					await transaction.insert(vaultKeyEnvelopes).values({
+						id: envelope.id,
+						vaultId: envelope.vaultId,
+						purpose: envelope.purpose,
+						envelopeVersion: envelope.envelopeVersion,
+						envelope: envelope.envelope,
+						createdAt: envelope.createdAt,
+						rotatedAt: envelope.rotatedAt ?? null,
+						revokedAt: envelope.revokedAt ?? null,
+					});
 				}
 
 				return mapVaultRow(vaultRow);

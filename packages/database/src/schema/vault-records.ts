@@ -1,5 +1,5 @@
 import { customType, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
+import type { PgTable } from 'drizzle-orm/pg-core';
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 	dataType() {
@@ -7,27 +7,7 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 	},
 });
 
-const vaultRecordsTable: PgTableWithColumns<{
-	name: 'vault_records';
-	schema: undefined;
-	columns: {
-		id: { data: string; driverData: string; notNull: true; hasDefault: false; primary: true; unique: true; type: 'uuid' };
-		vaultId: { data: string; driverData: string; notNull: true; hasDefault: false; primary: false; unique: false; type: 'uuid' };
-		recordType: { data: string; driverData: string; notNull: true; hasDefault: false; primary: false; unique: false; type: 'text' };
-		encryptionVersion: { data: number; driverData: number; notNull: true; hasDefault: false; primary: false; unique: false; type: 'integer' };
-		nonce: { data: Buffer; driverData: Buffer; notNull: true; hasDefault: false; primary: false; unique: false; type: 'bytea' };
-		ciphertext: { data: Buffer; driverData: Buffer; notNull: true; hasDefault: false; primary: false; unique: false; type: 'bytea' };
-		createdAt: { data: string; driverData: string; notNull: true; hasDefault: false; primary: false; unique: false; type: 'timestamp' };
-		updatedAt: { data: string; driverData: string; notNull: true; hasDefault: false; primary: false; unique: false; type: 'timestamp' };
-		deletedAt: { data: string | null; driverData: string | null; notNull: false; hasDefault: false; primary: false; unique: false; type: 'timestamp' };
-	};
-	indexes: {
-		vault_records_vault_id_idx: { columns: ['vaultId']; unique: false };
-		vault_records_vault_type_idx: { columns: ['vaultId', 'recordType']; unique: false };
-		vault_records_created_at_idx: { columns: ['createdAt']; unique: false };
-	};
-	foreignKeys: {};
-}> = pgTable(
+const vaultRecordsTable: PgTable = pgTable(
 	'vault_records',
 	{
 		id: uuid('id').primaryKey(),
@@ -47,6 +27,17 @@ const vaultRecordsTable: PgTableWithColumns<{
 	],
 );
 
-export type VaultRecordsTable = typeof vaultRecordsTable;
+// Use any for column types to be compatible with Drizzle's actual column types (which have getSQL method)
+export type VaultRecordsTable = PgTable & {
+	id: any;
+	vaultId: any;
+	recordType: any;
+	encryptionVersion: any;
+	nonce: any;
+	ciphertext: any;
+	createdAt: any;
+	updatedAt: any;
+	deletedAt: any;
+};
 
-export const vaultRecords: VaultRecordsTable = vaultRecordsTable;
+export const vaultRecords = vaultRecordsTable as VaultRecordsTable;

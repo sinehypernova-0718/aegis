@@ -9,27 +9,9 @@ import {
 	uniqueIndex,
 	uuid,
 } from 'drizzle-orm/pg-core';
-import type { PgTableWithColumns } from 'drizzle-orm/pg-core';
+import type { PgTable } from 'drizzle-orm/pg-core';
 
-const vaultKeyEnvelopesTable: PgTableWithColumns<{
-	name: 'vault_key_envelopes';
-	schema: undefined;
-	columns: {
-		id: { data: string; driverData: string; notNull: true; hasDefault: false; primary: true; unique: true; type: 'uuid' };
-		vaultId: { data: string; driverData: string; notNull: true; hasDefault: false; primary: false; unique: false; type: 'uuid' };
-		purpose: { data: string; driverData: string; notNull: true; hasDefault: false; primary: false; unique: false; type: 'text' };
-		envelopeVersion: { data: number; driverData: number; notNull: true; hasDefault: false; primary: false; unique: false; type: 'integer' };
-		envelope: { data: unknown; driverData: unknown; notNull: true; hasDefault: false; primary: false; unique: false; type: 'jsonb' };
-		createdAt: { data: string; driverData: string; notNull: true; hasDefault: false; primary: false; unique: false; type: 'timestamp' };
-		rotatedAt: { data: string | null; driverData: string | null; notNull: false; hasDefault: false; primary: false; unique: false; type: 'timestamp' };
-		revokedAt: { data: string | null; driverData: string | null; notNull: false; hasDefault: false; primary: false; unique: false; type: 'timestamp' };
-	};
-	indexes: {
-		vault_key_envelopes_vault_id_idx: { columns: ['vaultId']; unique: false };
-		vault_key_envelopes_active_purpose_idx: { columns: ['vaultId', 'purpose']; unique: true };
-	};
-	foreignKeys: {};
-}> = pgTable(
+const vaultKeyEnvelopesTable: PgTable = pgTable(
 	'vault_key_envelopes',
 	{
 		id: uuid('id').primaryKey(),
@@ -49,6 +31,16 @@ const vaultKeyEnvelopesTable: PgTableWithColumns<{
 	],
 );
 
-export type VaultKeyEnvelopesTable = typeof vaultKeyEnvelopesTable;
+// Use any for column types to be compatible with Drizzle's actual column types (which have getSQL method)
+export type VaultKeyEnvelopesTable = PgTable & {
+	id: any;
+	vaultId: any;
+	purpose: any;
+	envelopeVersion: any;
+	envelope: any;
+	createdAt: any;
+	rotatedAt: any;
+	revokedAt: any;
+};
 
-export const vaultKeyEnvelopes: VaultKeyEnvelopesTable = vaultKeyEnvelopesTable;
+export const vaultKeyEnvelopes = vaultKeyEnvelopesTable as VaultKeyEnvelopesTable;
