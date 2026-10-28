@@ -1,5 +1,6 @@
 import { customType, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import type { PgTable } from 'drizzle-orm/pg-core';
+
+import { vaults } from './vaults.js';
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 	dataType() {
@@ -7,11 +8,13 @@ const bytea = customType<{ data: Buffer; driverData: Buffer }>({
 	},
 });
 
-const vaultRecordsTable: PgTable = pgTable(
+export const vaultRecords = pgTable(
 	'vault_records',
 	{
 		id: uuid('id').primaryKey(),
-		vaultId: uuid('vault_id').notNull(),
+		vaultId: uuid('vault_id')
+			.notNull()
+			.references(() => vaults.id, { onDelete: 'cascade' }),
 		recordType: text('record_type').notNull(),
 		encryptionVersion: integer('encryption_version').notNull(),
 		nonce: bytea('nonce').notNull(),
@@ -27,17 +30,5 @@ const vaultRecordsTable: PgTable = pgTable(
 	],
 );
 
-// Use any for column types to be compatible with Drizzle's actual column types (which have getSQL method)
-export type VaultRecordsTable = PgTable & {
-	id: any;
-	vaultId: any;
-	recordType: any;
-	encryptionVersion: any;
-	nonce: any;
-	ciphertext: any;
-	createdAt: any;
-	updatedAt: any;
-	deletedAt: any;
-};
-
-export const vaultRecords = vaultRecordsTable as VaultRecordsTable;
+export type VaultRecord = typeof vaultRecords.$inferSelect;
+export type NewVaultRecord = typeof vaultRecords.$inferInsert;

@@ -1,7 +1,6 @@
-import type { PgTable } from 'drizzle-orm/pg-core';
 import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-const vaultsTable: PgTable = pgTable(
+export const vaults = pgTable(
 	'vaults',
 	{
 		id: uuid('id').primaryKey(),
@@ -13,13 +12,5 @@ const vaultsTable: PgTable = pgTable(
 	(table) => [index('vaults_status_idx').on(table.status)],
 );
 
-// Use any for column types to be compatible with Drizzle's actual column types (which have getSQL method)
-export type VaultsTable = PgTable & {
-	id: any;
-	status: any;
-	encryptionFormatVersion: any;
-	createdAt: any;
-	updatedAt: any;
-};
-
-export const vaults = vaultsTable as VaultsTable;
+export type Vault = typeof vaults.$inferSelect;
+export type NewVault = typeof vaults.$inferInsert;

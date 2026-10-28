@@ -165,6 +165,7 @@ describe.skipIf(!databaseUrl)('PostgreSQL repository behavior', () => {
 				ciphertext,
 				createdAt: now,
 				updatedAt: now,
+				deletedAt: null,
 			});
 
 			expect(await recordRepository.getRecordById(record.id)).toMatchObject({
@@ -203,7 +204,7 @@ describe.skipIf(!databaseUrl)('PostgreSQL transaction rollback', () => {
 				}),
 			).rejects.toThrow('forced transaction failure');
 
-			const rows = await client.database.select().from(vaults).where(eq(vaults.id!, vaultId));
+			const rows = await client.database.select().from(vaults).where(eq(vaults.id, vaultId));
 			expect(rows).toHaveLength(0);
 		} finally {
 			await client.close();

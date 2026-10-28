@@ -7,6 +7,7 @@ export { createDatabaseClient } from './client/database.js';
 export { DatabaseError, mapDatabaseError } from './errors/database.js';
 export { RecordNotFoundError, UniqueConstraintViolationError } from './errors/repository.js';
 export type { VaultRecord, VaultRecordRepository } from './repositories/vault-records.js';
+export type { Vault, NewVault, VaultKeyEnvelope, NewVaultKeyEnvelope, VaultRecord as VaultRecordSchema, NewVaultRecord } from './schema/index.js';
 export { DrizzleVaultRecordRepository } from './repositories/vault-records.js';
 export type {
 	CreateVaultInput,

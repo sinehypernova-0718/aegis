@@ -9,13 +9,16 @@ import {
 	uniqueIndex,
 	uuid,
 } from 'drizzle-orm/pg-core';
-import type { PgTable } from 'drizzle-orm/pg-core';
 
-const vaultKeyEnvelopesTable: PgTable = pgTable(
+import { vaults } from './vaults.js';
+
+export const vaultKeyEnvelopes = pgTable(
 	'vault_key_envelopes',
 	{
 		id: uuid('id').primaryKey(),
-		vaultId: uuid('vault_id').notNull(),
+		vaultId: uuid('vault_id')
+			.notNull()
+			.references(() => vaults.id, { onDelete: 'cascade' }),
 		purpose: text('purpose').notNull(),
 		envelopeVersion: integer('envelope_version').notNull(),
 		envelope: jsonb('envelope').notNull(),
@@ -31,16 +34,5 @@ const vaultKeyEnvelopesTable: PgTable = pgTable(
 	],
 );
 
-// Use any for column types to be compatible with Drizzle's actual column types (which have getSQL method)
-export type VaultKeyEnvelopesTable = PgTable & {
-	id: any;
-	vaultId: any;
-	purpose: any;
-	envelopeVersion: any;
-	envelope: any;
-	createdAt: any;
-	rotatedAt: any;
-	revokedAt: any;
-};
-
-export const vaultKeyEnvelopes = vaultKeyEnvelopesTable as VaultKeyEnvelopesTable;
+export type VaultKeyEnvelope = typeof vaultKeyEnvelopes.$inferSelect;
+export type NewVaultKeyEnvelope = typeof vaultKeyEnvelopes.$inferInsert;

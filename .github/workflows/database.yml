@@ -37,5 +37,9 @@ jobs:
           cache: pnpm
           node-version: 24
       - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @aegis/database lint
+      - run: pnpm --filter @aegis/database check
+      - run: pnpm --filter @aegis/database typecheck
+      - run: pnpm --filter @aegis/database build
       - run: pnpm --filter @aegis/database db:migrate
       - run: pnpm --filter @aegis/database test

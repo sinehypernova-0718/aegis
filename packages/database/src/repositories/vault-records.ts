@@ -3,22 +3,12 @@ import { eq } from 'drizzle-orm';
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
 import { RecordNotFoundError } from '../errors/repository.js';
-import { vaultRecords } from '../schema/vault-records.js';
+import { vaultRecords, type NewVaultRecord, type VaultRecord } from '../schema/vault-records.js';
 
-export interface VaultRecord {
-	id: string;
-	vaultId: string;
-	recordType: string;
-	encryptionVersion: number;
-	nonce: Buffer;
-	ciphertext: Buffer;
-	createdAt: string;
-	updatedAt: string;
-	deletedAt?: string | null;
-}
+export type { VaultRecord };
 
 export interface VaultRecordRepository {
-	createRecord(input: VaultRecord): Promise<VaultRecord>;
+	createRecord(input: NewVaultRecord): Promise<VaultRecord>;
 	getRecordById(id: string): Promise<VaultRecord | null>;
 	updateRecord(input: VaultRecord): Promise<VaultRecord>;
 	deleteRecord(id: string): Promise<void>;
@@ -27,25 +17,26 @@ export interface VaultRecordRepository {
 export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 	constructor(private readonly database: Database) {}
 
-	async createRecord(input: VaultRecord): Promise<VaultRecord> {
+	async createRecord(input: NewVaultRecord): Promise<VaultRecord> {
 		try {
+			const newRecord: NewVaultRecord = {
+				id: input.id,
+				vaultId: input.vaultId,
+				recordType: input.recordType,
+				encryptionVersion: input.encryptionVersion,
+				nonce: input.nonce,
+				ciphertext: input.ciphertext,
+				createdAt: input.createdAt,
+				updatedAt: input.updatedAt,
+				deletedAt: input.deletedAt ?? null,
+			};
 			const rows = await this.database
 				.insert(vaultRecords)
-				.values({
-					id: input.id,
-					vaultId: input.vaultId,
-					recordType: input.recordType,
-					encryptionVersion: input.encryptionVersion,
-					nonce: input.nonce,
-					ciphertext: input.ciphertext,
-					createdAt: input.createdAt,
-					updatedAt: input.updatedAt,
-					deletedAt: input.deletedAt ?? null,
-				})
+				.values(newRecord)
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError('vault record was not created');
-			return mapVaultRecord(row);
+			return row;
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}
@@ -58,7 +49,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 				.from(vaultRecords)
 				.where(eq(vaultRecords.id, id))
 				.limit(1);
-			return row ? mapVaultRecord(row) : null;
+			return row ?? null;
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}
@@ -80,7 +71,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError(`vault record not found: ${input.id}`);
-			return mapVaultRecord(row);
+			return row;
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}
@@ -93,19 +84,4 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 			throw mapDatabaseError(error);
 		}
 	}
-}
-
-function mapVaultRecord(row: unknown): VaultRecord {
-	const source = row as Record<string, unknown>;
-	return {
-		id: String(source.id),
-		vaultId: String(source.vaultId),
-		recordType: String(source.recordType),
-		encryptionVersion: Number(source.encryptionVersion),
-		nonce: source.nonce as Buffer,
-		ciphertext: source.ciphertext as Buffer,
-		createdAt: String(source.createdAt),
-		updatedAt: String(source.updatedAt),
-		deletedAt: source.deletedAt === null ? null : String(source.deletedAt),
-	};
 }

@@ -2,9 +2,9 @@ import { eq } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
-import { RecordNotFoundError, UniqueConstraintViolationError } from '../errors/repository.js';
-import { vaultKeyEnvelopes } from '../schema/vault-key-envelopes.js';
-import { vaults } from '../schema/vaults.js';
+import { RecordNotFoundError } from '../errors/repository.js';
+import { vaultKeyEnvelopes, type NewVaultKeyEnvelope } from '../schema/vault-key-envelopes.js';
+import { vaults, type NewVault, type Vault } from '../schema/vaults.js';
 import { withDatabaseTransaction } from '../transactions/index.js';
 
 export interface CreateVaultInput {
@@ -27,43 +27,44 @@ export interface CreateVaultKeyEnvelopeInput {
 }
 
 export interface VaultRepository {
-	createVault(input: CreateVaultInput): Promise<CreateVaultInput>;
-	getVaultById(id: string): Promise<CreateVaultInput | null>;
-	updateVaultStatus(id: string, status: string, updatedAt: string): Promise<CreateVaultInput>;
+	createVault(input: CreateVaultInput): Promise<Vault>;
+	getVaultById(id: string): Promise<Vault | null>;
+	updateVaultStatus(id: string, status: string, updatedAt: string): Promise<Vault>;
 	initializeVaultWithKeyEnvelopes(
 		vault: CreateVaultInput,
 		envelopes: readonly CreateVaultKeyEnvelopeInput[],
-	): Promise<CreateVaultInput>;
+	): Promise<Vault>;
 }
 
 export class DrizzleVaultRepository implements VaultRepository {
 	constructor(private readonly database: Database) {}
 
-	async createVault(input: CreateVaultInput): Promise<CreateVaultInput> {
+	async createVault(input: CreateVaultInput): Promise<Vault> {
 		try {
+			const newVault: NewVault = {
+				id: input.id,
+				status: input.status,
+				encryptionFormatVersion: input.encryptionFormatVersion,
+				createdAt: input.createdAt,
+				updatedAt: input.updatedAt,
+			};
 			const rows = await this.database
 				.insert(vaults)
-				.values({
-					id: input.id,
-					status: input.status,
-					encryptionFormatVersion: input.encryptionFormatVersion,
-					createdAt: input.createdAt,
-					updatedAt: input.updatedAt,
-				})
+				.values(newVault)
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError('vault record was not created');
-			return mapVaultRow(row);
+			return row;
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}
 	}
 
-	async getVaultById(id: string): Promise<CreateVaultInput | null> {
+	async getVaultById(id: string): Promise<Vault | null> {
 		try {
 			const rows = await this.database.select().from(vaults).where(eq(vaults.id, id)).limit(1);
 			const row = Array.isArray(rows) ? rows[0] : null;
-			return row ? mapVaultRow(row) : null;
+			return row ?? null;
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}
@@ -73,7 +74,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 		id: string,
 		status: string,
 		updatedAt: string,
-	): Promise<CreateVaultInput> {
+	): Promise<Vault> {
 		try {
 			const rows = await this.database
 				.update(vaults)
@@ -82,7 +83,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 				.returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError(`vault not found: ${id}`);
-			return mapVaultRow(row);
+			return row;
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}
@@ -91,7 +92,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 	async initializeVaultWithKeyEnvelopes(
 		vault: CreateVaultInput,
 		envelopes: readonly CreateVaultKeyEnvelopeInput[],
-	): Promise<CreateVaultInput> {
+	): Promise<Vault> {
 		if (envelopes.length === 0) {
 			throw new TypeError('vault initialization requires at least one key envelope');
 		}
@@ -102,47 +103,39 @@ export class DrizzleVaultRepository implements VaultRepository {
 		}
 		try {
 			return await withDatabaseTransaction(this.database, async (transaction) => {
+				const newVault: NewVault = {
+					id: vault.id,
+					status: vault.status,
+					encryptionFormatVersion: vault.encryptionFormatVersion,
+					createdAt: vault.createdAt,
+					updatedAt: vault.updatedAt,
+				};
 				const vaultRows = await transaction
 					.insert(vaults)
-					.values({
-						id: vault.id,
-						status: vault.status,
-						encryptionFormatVersion: vault.encryptionFormatVersion,
-						createdAt: vault.createdAt,
-						updatedAt: vault.updatedAt,
-					})
+					.values(newVault)
 					.returning();
 				const vaultRow = Array.isArray(vaultRows) ? vaultRows[0] : null;
 				if (!vaultRow) throw new RecordNotFoundError('vault record was not created');
 
-				for (const envelope of envelopes) {
-					await transaction.insert(vaultKeyEnvelopes).values({
-						id: envelope.id,
-						vaultId: envelope.vaultId,
-						purpose: envelope.purpose,
-						envelopeVersion: envelope.envelopeVersion,
-						envelope: envelope.envelope,
-						createdAt: envelope.createdAt,
-						rotatedAt: envelope.rotatedAt ?? null,
-						revokedAt: envelope.revokedAt ?? null,
-					});
+				const newEnvelopes: NewVaultKeyEnvelope[] = envelopes.map((envelope) => ({
+					id: envelope.id,
+					vaultId: envelope.vaultId,
+					purpose: envelope.purpose,
+					envelopeVersion: envelope.envelopeVersion,
+					envelope: envelope.envelope,
+					createdAt: envelope.createdAt,
+					rotatedAt: envelope.rotatedAt ?? null,
+					revokedAt: envelope.revokedAt ?? null,
+				}));
+
+				for (const envelope of newEnvelopes) {
+					await transaction.insert(vaultKeyEnvelopes).values(envelope);
 				}
 
-				return mapVaultRow(vaultRow);
+				return vaultRow;
 			});
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}
 	}
-}
-
-function mapVaultRow(row: unknown): CreateVaultInput {
-	const source = row as Record<string, unknown>;
-	return {
-		id: String(source.id),
-		status: String(source.status),
-		encryptionFormatVersion: Number(source.encryptionFormatVersion),
-		createdAt: String(source.createdAt),
-		updatedAt: String(source.updatedAt),
-	};
 }
