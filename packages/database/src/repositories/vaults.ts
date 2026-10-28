@@ -3,8 +3,8 @@ import { eq } from 'drizzle-orm';
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
 import { RecordNotFoundError } from '../errors/repository.js';
-import { vaultKeyEnvelopes, type NewVaultKeyEnvelope } from '../schema/vault-key-envelopes.js';
-import { vaults, type NewVault, type Vault } from '../schema/vaults.js';
+import { type NewVaultKeyEnvelope, vaultKeyEnvelopes } from '../schema/vault-key-envelopes.js';
+import { type NewVault, type Vault, vaults } from '../schema/vaults.js';
 import { withDatabaseTransaction } from '../transactions/index.js';
 
 export interface CreateVaultInput {
@@ -48,10 +48,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 				createdAt: input.createdAt,
 				updatedAt: input.updatedAt,
 			};
-			const rows = await this.database
-				.insert(vaults)
-				.values(newVault)
-				.returning();
+			const rows = await this.database.insert(vaults).values(newVault).returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError('vault record was not created');
 			return row;
@@ -70,11 +67,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 		}
 	}
 
-	async updateVaultStatus(
-		id: string,
-		status: string,
-		updatedAt: string,
-	): Promise<Vault> {
+	async updateVaultStatus(id: string, status: string, updatedAt: string): Promise<Vault> {
 		try {
 			const rows = await this.database
 				.update(vaults)
@@ -110,10 +103,7 @@ export class DrizzleVaultRepository implements VaultRepository {
 					createdAt: vault.createdAt,
 					updatedAt: vault.updatedAt,
 				};
-				const vaultRows = await transaction
-					.insert(vaults)
-					.values(newVault)
-					.returning();
+				const vaultRows = await transaction.insert(vaults).values(newVault).returning();
 				const vaultRow = Array.isArray(vaultRows) ? vaultRows[0] : null;
 				if (!vaultRow) throw new RecordNotFoundError('vault record was not created');
 

@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
 import { RecordNotFoundError } from '../errors/repository.js';
-import { vaultRecords, type NewVaultRecord, type VaultRecord } from '../schema/vault-records.js';
+import { type NewVaultRecord, type VaultRecord, vaultRecords } from '../schema/vault-records.js';
 
 export type { VaultRecord };
 
@@ -30,10 +30,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 				updatedAt: input.updatedAt,
 				deletedAt: input.deletedAt ?? null,
 			};
-			const rows = await this.database
-				.insert(vaultRecords)
-				.values(newRecord)
-				.returning();
+			const rows = await this.database.insert(vaultRecords).values(newRecord).returning();
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError('vault record was not created');
 			return row;
