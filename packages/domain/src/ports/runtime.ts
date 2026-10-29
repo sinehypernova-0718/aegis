@@ -7,3 +7,14 @@ export interface Clock {
 export interface IdGenerator {
 	generate(): string;
 }
+
+/**
+ * Delayed-callback scheduler.
+ *
+ * `schedule` returns an idempotent cancellation function. Injecting this port
+ * keeps idle-lock behaviour deterministic in tests and keeps process timer
+ * ownership out of the domain's business logic.
+ */
+export interface Scheduler {
+	schedule(delayMs: number, callback: () => void): () => void;
+}

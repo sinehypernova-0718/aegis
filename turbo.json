@@ -39,6 +39,7 @@
 
 		"test": {
 			"dependsOn": ["build"],
+			"env": ["DATABASE_URL"],
 			"outputs": ["coverage/**"]
 		},
 
@@ -49,6 +50,7 @@
 
 		"test:coverage": {
 			"dependsOn": ["build"],
+			"env": ["DATABASE_URL"],
 			"outputs": ["coverage/**"]
 		},
 

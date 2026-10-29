@@ -17,6 +17,7 @@ import { InitializeVault } from '../vault/initialize-vault.js';
 import { LockVault } from '../vault/lock-vault.js';
 import { DefaultVaultSessionManager } from '../../sessions/vault-session-manager.js';
 import {
+	FakeScheduler,
 	FakeVaultCryptoPort,
 	FixedClock,
 	InMemoryCredentialRepository,
@@ -36,7 +37,7 @@ const credential = {
 
 async function setup() {
 	const vaultRepository = new InMemoryVaultRepository();
-	const sessionManager = new DefaultVaultSessionManager();
+	const sessionManager = new DefaultVaultSessionManager({ scheduler: new FakeScheduler() });
 	const crypto = new FakeVaultCryptoPort();
 	const clock = new FixedClock();
 	const ids = new SequentialIdGenerator();
@@ -137,9 +138,9 @@ describe('credential use cases', () => {
 		await new LockVault({ sessionManager: s.sessionManager }).execute({ vaultId: lockedVault });
 		const id = '00000000-0000-4000-8000-0000000000ff';
 
-		await expect(s.create.execute({ vaultId: lockedVault, payload: credential })).rejects.toBeInstanceOf(
-			VaultLockedError,
-		);
+		await expect(
+			s.create.execute({ vaultId: lockedVault, payload: credential }),
+		).rejects.toBeInstanceOf(VaultLockedError);
 		await expect(s.get.execute({ vaultId: lockedVault, id })).rejects.toBeInstanceOf(
 			VaultLockedError,
 		);
@@ -172,9 +173,9 @@ describe('credential use cases', () => {
 		await expect(
 			s.update.execute({ vaultId: otherVaultId, id: created.id, payload: credential }),
 		).rejects.toBeInstanceOf(CredentialNotFoundError);
-		await expect(s.remove.execute({ vaultId: otherVaultId, id: created.id })).rejects.toBeInstanceOf(
-			CredentialNotFoundError,
-		);
+		await expect(
+			s.remove.execute({ vaultId: otherVaultId, id: created.id }),
+		).rejects.toBeInstanceOf(CredentialNotFoundError);
 	});
 
 	it('rejects an invalid payload before persisting', async () => {
@@ -188,9 +189,9 @@ describe('credential use cases', () => {
 	it('reports persistence failures instead of success', async () => {
 		const s = await setup();
 		s.credentialRepository.failCreate = true;
-		await expect(s.create.execute({ vaultId: s.vaultId, payload: credential })).rejects.toBeInstanceOf(
-			PersistenceError,
-		);
+		await expect(
+			s.create.execute({ vaultId: s.vaultId, payload: credential }),
+		).rejects.toBeInstanceOf(PersistenceError);
 
 		s.credentialRepository.failCreate = false;
 		const created = await s.create.execute({ vaultId: s.vaultId, payload: credential });

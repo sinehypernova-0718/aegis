@@ -9,6 +9,8 @@ export type Database = ReturnType<typeof drizzle<typeof schema>>;
 export interface DatabaseClient {
 	database: Database;
 	pool: Pool;
+	/** Minimal connectivity check used by readiness probes. */
+	ping(): Promise<void>;
 	close(): Promise<void>;
 }
 
@@ -24,6 +26,9 @@ export function createDatabaseClient(config: DatabaseClientConfig): DatabaseClie
 	return {
 		database,
 		pool,
+		ping: async () => {
+			await pool.query('select 1');
+		},
 		close: async () => {
 			await pool.end();
 		},

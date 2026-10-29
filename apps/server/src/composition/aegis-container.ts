@@ -25,6 +25,8 @@ export interface AegisContainerOptions {
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
 	readonly keyEnvelopePurpose?: string;
+	/** Inactivity window before an unlocked vault is locked automatically. */
+	readonly idleTimeoutMs?: number;
 }
 
 /** Composition root: concrete repositories + crypto adapter + session manager. */
@@ -49,7 +51,9 @@ export function createAegisContainer(options: AegisContainerOptions): AegisConta
 	const vaultRepository = new DrizzleVaultRepository(options.database);
 	const credentialRepository = createCredentialRepositoryPort(options.database);
 	const crypto = createCryptoVaultPort();
-	const sessionManager = new DefaultVaultSessionManager();
+	const sessionManager = new DefaultVaultSessionManager(
+		options.idleTimeoutMs !== undefined ? { idleTimeoutMs: options.idleTimeoutMs } : {},
+	);
 	const keyEnvelopePurpose = options.keyEnvelopePurpose ?? PRIMARY_KEY_ENVELOPE_PURPOSE;
 
 	return {
