@@ -4,7 +4,10 @@ import type { ErrorCode } from '@aegis/contracts';
  * Base class for typed domain errors. The `contractCode` mirrors the safe,
  * external error code from `@aegis/contracts`; the server boundary maps domain
  * errors to an `ErrorResponse` using it. Domain error messages never contain
- * plaintext secrets, keys, or SQL details.
+ * plaintext secrets, keys, or SQL details. Underlying errors may be attached as
+ * `cause` for internal diagnostics only: a cause can carry adapter-level detail
+ * (SQL text, constraints, connection info) and must never be serialized into
+ * responses or unsafe logs.
  */
 export class DomainError extends Error {
 	readonly code: string;

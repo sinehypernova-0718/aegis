@@ -58,6 +58,8 @@ export function mapDatabaseError(error: unknown): Error {
 	if (error instanceof RecordNotFoundError) return error;
 	if (error instanceof UniqueConstraintViolationError) return error;
 	if (error instanceof DatabaseError) return error;
-	// Preserve the original cause for debugging without leaking raw SQL/connection details.
+	// Retain the underlying error as `cause` for internal diagnostics. That cause
+	// can contain SQL text, constraint names, or connection details, so it must
+	// never be serialized into API responses or written to unsafe logs.
 	return new DatabaseError('database operation failed', { cause: error });
 }

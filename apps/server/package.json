@@ -19,10 +19,12 @@
 		"lint:fix": "oxlint . --fix",
 		"check": "biome check ."
 	},
-	"devDependencies": {
+	"dependencies": {
 		"@aegis/crypto": "workspace:*",
 		"@aegis/database": "workspace:*",
-		"@aegis/domain": "workspace:*",
+		"@aegis/domain": "workspace:*"
+	},
+	"devDependencies": {
 		"@types/node": "24.19.2",
 		"drizzle-orm": "^0.45.4",
 		"tsx": "4.23.15"

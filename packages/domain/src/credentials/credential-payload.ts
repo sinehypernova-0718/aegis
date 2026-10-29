@@ -1,4 +1,8 @@
-import { ENCRYPTED_PAYLOAD_MAX_BYTES, IsoUtcTimestampSchema, boundedNonBlankString } from '@aegis/contracts';
+import {
+	ENCRYPTED_PAYLOAD_MAX_BYTES,
+	IsoUtcTimestampSchema,
+	boundedNonBlankString,
+} from '@aegis/contracts';
 import { z } from 'zod';
 
 import { InvalidCredentialPayloadError } from '../errors/domain-errors.js';
@@ -44,7 +48,28 @@ export interface CredentialPayload {
 	expiresAt?: string | undefined;
 }
 
-const CredentialFieldsSchema = z
+/**
+ * Accepted-on-input shape of the stored payload. `tags` is optional on the way
+ * in because the schema defaults it to `[]`.
+ */
+interface StoredCredentialPayloadInput {
+	schemaVersion: 1;
+	type: CredentialKind;
+	name: string;
+	secret: string;
+	username?: string | undefined;
+	url?: string | undefined;
+	notes?: string | undefined;
+	tags?: string[] | undefined;
+	expiresAt?: string | undefined;
+}
+
+/**
+ * Schema for caller-provided credential input. It validates only fields the
+ * caller may provide and deliberately excludes `schemaVersion`, which the
+ * domain stamps when constructing the stored payload.
+ */
+const CredentialInputSchema = z
 	.object({
 		type: z.enum(CREDENTIAL_KINDS),
 		name: boundedNonBlankString(1, CREDENTIAL_NAME_MAX_LENGTH),
@@ -60,13 +85,18 @@ const CredentialFieldsSchema = z
 	})
 	.strict();
 
-const StoredCredentialPayloadSchema = CredentialFieldsSchema.extend({
+/** Schema for the persisted/decrypted representation, including `schemaVersion`. */
+const StoredCredentialPayloadSchema = CredentialInputSchema.extend({
 	schemaVersion: z.literal(CREDENTIAL_PAYLOAD_SCHEMA_VERSION),
 }).strict();
 
-/** Public schema (structural discriminator + fields). */
-export const CredentialPayloadSchema: z.ZodType<CredentialPayload, CredentialPayloadInput> =
-	StoredCredentialPayloadSchema as unknown as z.ZodType<CredentialPayload, CredentialPayloadInput>;
+/**
+ * Public schema for the stored credential payload. Its declared input type
+ * honestly reflects that `schemaVersion` is required and that `tags` is optional
+ * on the way in; its output is the fully-populated `CredentialPayload`.
+ */
+export const CredentialPayloadSchema: z.ZodType<CredentialPayload, StoredCredentialPayloadInput> =
+	StoredCredentialPayloadSchema;
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -113,12 +143,13 @@ function dedupeTags(input: unknown): unknown {
 }
 
 /**
- * Validate and canonicalize user-supplied credential fields. `schemaVersion` is
- * always stamped to the current version. Exact duplicate tags are removed
- * (case-sensitive, first occurrence wins) before the tag-count bound is applied.
+ * Validate and canonicalize user-supplied credential fields using the caller
+ * input schema. `schemaVersion` is always stamped to the current version. Exact
+ * duplicate tags are removed (case-sensitive, first occurrence wins) before the
+ * tag-count bound is applied.
  */
 export function validateCredentialPayload(input: unknown): CredentialPayload {
-	const result = CredentialFieldsSchema.safeParse(dedupeTags(input));
+	const result = CredentialInputSchema.safeParse(dedupeTags(input));
 	if (!result.success) {
 		throw new InvalidCredentialPayloadError('invalid credential payload');
 	}
@@ -151,7 +182,7 @@ export function serializeCredentialPayload(payload: CredentialPayload): Uint8Arr
 	return bytes;
 }
 
-/** Parse and validate a decrypted payload. */
+/** Parse and validate a decrypted payload using the stored-payload schema. */
 export function parseCredentialPayload(bytes: Uint8Array): CredentialPayload {
 	let parsed: unknown;
 	try {

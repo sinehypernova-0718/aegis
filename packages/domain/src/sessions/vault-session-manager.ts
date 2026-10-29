@@ -44,6 +44,14 @@ export class DefaultVaultSessionManager implements VaultSessionManager {
 		if (typeof vaultId !== 'string' || vaultId.length === 0) {
 			throw new TypeError('vaultId must be a non-empty string');
 		}
+		// The session must belong to the vault it is registered under. This is
+		// checked before any registry mutation so a session for one vault can
+		// never be reached through another vault's id.
+		if (session.vaultId !== vaultId) {
+			throw new SessionRegistrationConflictError(
+				'session vault id does not match the registration vault id',
+			);
+		}
 		// Synchronous check-and-set: JS single-threaded execution makes this
 		// race-free, so at most one session exists per vault.
 		if (this.#entries.has(vaultId)) {

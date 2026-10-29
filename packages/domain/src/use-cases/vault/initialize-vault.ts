@@ -1,3 +1,5 @@
+import type { VaultSession } from '@aegis/crypto';
+
 import {
 	InvalidVaultInputError,
 	PersistenceError,
@@ -8,6 +10,19 @@ import type { Clock, IdGenerator } from '../../ports/runtime.js';
 import type { VaultCryptoPort } from '../../ports/vault-crypto.js';
 import type { VaultRepositoryPort } from '../../ports/vault-repository.js';
 import type { VaultSessionManager } from '../../sessions/vault-session-manager.js';
+
+/**
+ * Dispose a session during failure cleanup without masking the primary error.
+ * Disposal is best-effort memory hygiene; a secondary failure here must never
+ * replace the error that triggered the cleanup.
+ */
+function disposeQuietly(session: VaultSession): void {
+	try {
+		session.dispose();
+	} catch {
+		// Ignore: cleanup is best-effort and must not hide the original failure.
+	}
+}
 
 export interface InitializeVaultDeps {
 	readonly vaultRepository: VaultRepositoryPort;
@@ -56,43 +71,55 @@ export class InitializeVault {
 		}
 
 		const created = await this.#deps.crypto.createVaultSession({ vaultId, passphrase });
-		const now = this.#deps.clock.now();
-
+		// Ownership of the session transfers to the manager only after a successful
+		// registration. Until then, every exit path — including failures while
+		// generating timestamps, persisting, or registering — disposes it.
+		let ownershipTransferred = false;
 		try {
-			await this.#deps.vaultRepository.initializeVaultWithKeyEnvelopes(
-				{
-					id: vaultId,
-					status: 'initialized',
-					encryptionFormatVersion: created.envelope.version,
-					createdAt: now,
-					updatedAt: now,
-				},
-				[
+			const now = this.#deps.clock.now();
+
+			try {
+				await this.#deps.vaultRepository.initializeVaultWithKeyEnvelopes(
 					{
-						id: this.#deps.ids.generate(),
-						vaultId,
-						purpose: this.#deps.keyEnvelopePurpose,
-						envelopeVersion: created.envelope.version,
-						envelope: created.envelope,
+						id: vaultId,
+						status: 'initialized',
+						encryptionFormatVersion: created.envelope.version,
 						createdAt: now,
+						updatedAt: now,
 					},
-				],
-			);
-		} catch (error) {
-			created.session.dispose();
-			if (isUniqueViolation(error)) {
-				throw new VaultAlreadyInitializedError(`vault ${vaultId} already exists`);
+					[
+						{
+							id: this.#deps.ids.generate(),
+							vaultId,
+							purpose: this.#deps.keyEnvelopePurpose,
+							envelopeVersion: created.envelope.version,
+							envelope: created.envelope,
+							createdAt: now,
+						},
+					],
+				);
+			} catch (error) {
+				if (isUniqueViolation(error)) {
+					throw new VaultAlreadyInitializedError(`vault ${vaultId} already exists`);
+				}
+				throw new PersistenceError('failed to persist vault initialization', { cause: error });
 			}
-			throw new PersistenceError('failed to persist vault initialization', { cause: error });
+
+			// Durable state is committed. A registration failure must not roll back
+			// the vault; it stays recoverable through the normal unlock flow.
+			try {
+				this.#deps.sessionManager.register(vaultId, created.session);
+				ownershipTransferred = true;
+			} catch {
+				// Registration failed; the finally block disposes the unregistered session.
+			}
+		} finally {
+			if (!ownershipTransferred) disposeQuietly(created.session);
 		}
 
-		// Durable state committed. Registration failure must not roll back.
-		try {
-			this.#deps.sessionManager.register(vaultId, created.session);
-		} catch {
-			created.session.dispose();
-			return { vaultId, runtimeState: 'locked' };
-		}
-		return { vaultId, runtimeState: 'unlocked' };
+		return {
+			vaultId,
+			runtimeState: ownershipTransferred ? 'unlocked' : 'locked',
+		};
 	}
 }
