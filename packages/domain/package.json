@@ -35,5 +35,10 @@
 	},
 	"devDependencies": {
 		"@types/node": "24.19.2"
+	},
+	"dependencies": {
+		"@aegis/contracts": "workspace:*",
+		"@aegis/crypto": "workspace:*",
+		"zod": "^4.6.7"
 	}
 }

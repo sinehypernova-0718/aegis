@@ -20,7 +20,11 @@
 		"check": "biome check ."
 	},
 	"devDependencies": {
+		"@aegis/crypto": "workspace:*",
+		"@aegis/database": "workspace:*",
+		"@aegis/domain": "workspace:*",
 		"@types/node": "24.19.2",
+		"drizzle-orm": "^0.45.4",
 		"tsx": "4.23.15"
 	}
 }

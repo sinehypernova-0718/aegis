@@ -1,6 +1,7 @@
 {
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
-		"isolatedDeclarations": false
+		"isolatedDeclarations": false,
+		"tsBuildInfoFile": "./dist/tsconfig.typecheck.tsbuildinfo"
 	}
 }

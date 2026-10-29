@@ -1,9 +1,13 @@
-import { eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
 import { RecordNotFoundError } from '../errors/repository.js';
-import { type NewVaultKeyEnvelope, vaultKeyEnvelopes } from '../schema/vault-key-envelopes.js';
+import {
+	type NewVaultKeyEnvelope,
+	type VaultKeyEnvelope,
+	vaultKeyEnvelopes,
+} from '../schema/vault-key-envelopes.js';
 import { type NewVault, type Vault, vaults } from '../schema/vaults.js';
 import { withDatabaseTransaction } from '../transactions/index.js';
 
@@ -30,6 +34,8 @@ export interface VaultRepository {
 	createVault(input: CreateVaultInput): Promise<Vault>;
 	getVaultById(id: string): Promise<Vault | null>;
 	updateVaultStatus(id: string, status: string, updatedAt: string): Promise<Vault>;
+	/** Returns the single eligible (non-revoked) envelope for a vault + purpose. */
+	getActiveKeyEnvelope(vaultId: string, purpose: string): Promise<VaultKeyEnvelope | null>;
 	initializeVaultWithKeyEnvelopes(
 		vault: CreateVaultInput,
 		envelopes: readonly CreateVaultKeyEnvelopeInput[],
@@ -77,6 +83,27 @@ export class DrizzleVaultRepository implements VaultRepository {
 			const row = Array.isArray(rows) ? rows[0] : null;
 			if (!row) throw new RecordNotFoundError(`vault not found: ${id}`);
 			return row;
+		} catch (error) {
+			throw mapDatabaseError(error);
+		}
+	}
+
+	async getActiveKeyEnvelope(vaultId: string, purpose: string): Promise<VaultKeyEnvelope | null> {
+		try {
+			const rows = await this.database
+				.select()
+				.from(vaultKeyEnvelopes)
+				.where(
+					and(
+						eq(vaultKeyEnvelopes.vaultId, vaultId),
+						eq(vaultKeyEnvelopes.purpose, purpose),
+						isNull(vaultKeyEnvelopes.revokedAt),
+					),
+				)
+				.orderBy(desc(vaultKeyEnvelopes.createdAt))
+				.limit(1);
+			const row = rows[0];
+			return row ?? null;
 		} catch (error) {
 			throw mapDatabaseError(error);
 		}

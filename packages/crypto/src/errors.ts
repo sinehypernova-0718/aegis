@@ -40,3 +40,15 @@ export class EnvelopeValidationError extends CryptoError {
 		super(message, 'CRYPTO_ENVELOPE_INVALID');
 	}
 }
+
+export class SessionDisposedError extends CryptoError {
+	constructor(message = 'vault session has been disposed') {
+		super(message, 'CRYPTO_SESSION_DISPOSED');
+	}
+}
+
+export class RecordSizeError extends CryptoError {
+	constructor(message: string) {
+		super(message, 'CRYPTO_RECORD_SIZE');
+	}
+}
