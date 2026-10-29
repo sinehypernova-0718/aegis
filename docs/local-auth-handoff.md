@@ -63,7 +63,8 @@ Properties:
   requires `x-aegis-handoff: 1`, which a cross-site form or image cannot set and
   which forces a CORS preflight that the server never grants. A cross-site
   request therefore cannot install a session, and a cross-site request cannot
-  use one.
+  use one. These are **browser** controls; they do not authenticate a
+  non-browser local caller (see the trust boundary below).
 - **No `Secure` flag.** Aegis binds plain HTTP on loopback (`127.0.0.1`), where a
   `Secure` cookie would never be sent. Loopback traffic does not cross a network
   boundary; the `Host`/`Origin` checks are the transport guard. If Aegis ever
@@ -72,6 +73,41 @@ Properties:
   server should proxy `/auth` and `/vaults` so the browser still sees one
   origin; enabling cross-origin credentialed requests would also require an
   explicit CORS policy and is intentionally out of scope.
+
+## Trust boundary: the listener, not the OS user
+
+`POST /auth/session` is intentionally **unauthenticated with respect to the
+operating system**. It has to be: before the handoff the browser has no
+credential to present, and Node cannot recover the OS user of a TCP peer.
+
+The `x-aegis-handoff` header, `SameSite=Strict`, and the
+`Host`/`Origin`/`Sec-Fetch-Site` hooks are **browser CSRF defenses, not
+authentication factors**. A non-browser local process can:
+- send `x-aegis-handoff: 1` itself,
+- omit `Origin` (the hooks only validate an `Origin` that is present), or
+- replay the exact request a browser would make.
+
+Loopback is shared by all local users on most systems, so any process that can
+connect to the listener can obtain a session cookie. The actual boundary is:
+
+> **Any process that can reach the loopback listener is trusted to attempt
+> authentication.** The per-launch token gates accidental and remote access and
+> browser CSRF. The vault passphrase remains the secret that protects the data.
+> This transport does **not** provide OS-user isolation.
+
+This is acceptable for the intended single-user, local-first deployment, where
+the desktop session is the trust domain. It is **not** acceptable on a
+multi-user host where other OS users are untrusted. Enforcing the OS-user
+boundary requires an OS-scoped channel and a native component:
+- POSIX: a Unix domain socket in a `0700` directory (the socket file itself
+  `0600`), plus a native launcher/bridge that the browser talks to.
+- Windows: a named pipe with a DACL limited to the current user SID, plus the
+  same native bridge.
+
+The browser cannot connect to a Unix socket or named pipe directly, so this
+requires a native component that the repository does not yet ship. Until then,
+deployments that need multi-user isolation should run Aegis under a dedicated
+OS account, container, or VM.
 
 ### Endpoints
 
@@ -126,11 +162,14 @@ on disk. A supplied `AEGIS_API_TOKEN` disables the file entirely.
 
 ## Residual considerations
 
-- Any local process running as the same user can still reach the loopback
-  endpoint or read an opt-in token file. The threat model is the browser origin,
-  not a compromised local account; the OS user boundary is the trust boundary.
-- `POST /auth/session` is unauthenticated by design (it is the bootstrap). It is
-  protected by the same-origin checks and the non-simple header, and it only
-  ever returns `204`; it never echoes the token in a body.
+- Any local process that can reach the listener can obtain a session cookie
+  (see [Trust boundary](#trust-boundary-the-listener-not-the-os-user)). This is
+  true regardless of which OS user owns the process. The OS-user boundary is
+  **not** provided by the loopback transport; do not treat `127.0.0.1` as
+  user-scoped.
+- `POST /auth/session` is unauthenticated by design (it is the bootstrap). The
+  browser controls reduce cross-site risk only; they do not authenticate a
+  local caller. The endpoint only ever returns `204` and never echoes the token
+  in a body.
 - On Windows the opt-in token file's `0o600` mode is not an ACL guarantee. The
   parent directory ACL is the control; verify it before enabling the file.

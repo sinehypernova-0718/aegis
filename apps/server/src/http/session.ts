@@ -15,6 +15,10 @@
  * `Secure` cookie would never be sent. Loopback traffic does not cross a
  * network boundary; the `Host`/`Origin` checks in `security.ts` are the
  * equivalent transport guard.
+ *
+ * The handoff is not an OS-user boundary. Loopback is shared by local users,
+ * and a non-browser process can reproduce the browser request. See
+ * `docs/local-auth-handoff.md` ("Trust boundary").
  */
 
 /** Name of the browser credential. Deliberately does not look like the bearer token. */

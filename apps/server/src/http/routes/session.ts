@@ -5,13 +5,19 @@ import { buildClearedSessionCookie, buildSessionCookie } from '../session.js';
 import type { AuthenticateHandler } from './vaults.js';
 
 /**
- * Header the trusted UI sends when requesting the browser credential.
+ * Header the browser client sends when requesting the browser credential.
  *
- * It is not a secret. Its job is to make the handoff a non-simple request: a
- * cross-site `<form>`/`<img>` cannot set a custom header, and a cross-origin
- * script would need a successful CORS preflight that this server never grants.
- * Combined with the global Host/Origin/Sec-Fetch-Site hooks and
- * `SameSite=Strict`, this closes the CSRF path to cookie issuance.
+ * It is **not** an authentication factor. Its only job is to make the handoff
+ * a non-simple request: a cross-site `<form>`/`<img>` cannot set a custom
+ * header, and a cross-origin script would need a successful CORS preflight that
+ * this server never grants. Combined with the global
+ * Host/Origin/Sec-Fetch-Site hooks and `SameSite=Strict`, this closes the
+ * browser CSRF path to cookie issuance.
+ *
+ * A non-browser local process can send this header itself and omit `Origin`.
+ * The handoff therefore trusts any caller that can reach the loopback listener;
+ * loopback does not establish the peer's OS user. See
+ * `docs/local-auth-handoff.md` ("Trust boundary").
  */
 export const HANDOFF_HEADER = 'x-aegis-handoff';
 
@@ -28,6 +34,10 @@ export function registerSessionRoutes(app: FastifyInstance, deps: SessionRouteDe
 	 * Install the browser credential. No token appears in the body, URL, or
 	 * anywhere JavaScript can read it: only in the `HttpOnly` `Set-Cookie`
 	 * response header.
+	 *
+	 * This route is unauthenticated by design: the server cannot verify the OS
+	 * user of a TCP peer, so it trusts any process that can reach the listener.
+	 * The header/Fetch-Metadata checks only stop cross-site browser requests.
 	 */
 	app.post('/auth/session', async (request, reply) => {
 		if (request.headers[HANDOFF_HEADER] !== '1') {

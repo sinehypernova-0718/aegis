@@ -1,5 +1,5 @@
 /**
- * Trusted-UI side of the local authentication handoff.
+ * Browser side of the local authentication handoff.
  *
  * The browser cannot read the per-launch token file, and this module never asks
  * for the token. It calls the local server's same-origin `POST /auth/session`
@@ -13,6 +13,9 @@
  *    cannot exfiltrate the long-lived token;
  *  - `credentials: 'same-origin'` keeps the credential off every cross-origin
  *    request, so a mixed-in third-party resource cannot receive it.
+ *
+ * This is not an OS-user boundary. The server trusts any process that can reach
+ * its loopback listener; see `docs/local-auth-handoff.md` ("Trust boundary").
  */
 
 const SESSION_PATH = '/auth/session';

@@ -90,6 +90,22 @@ describe('local auth handoff: browser session cookie', () => {
 		await app.close();
 	});
 
+	it('documents the trust model: a non-browser local caller can hand off', async () => {
+		const app = makeApp();
+		// No Origin and no browser Fetch Metadata: exactly what a local process
+		// can send. This is the documented boundary - any process that can reach
+		// the loopback listener is trusted to attempt authentication. It is NOT
+		// an OS-user boundary; see docs/local-auth-handoff.md ("Trust boundary").
+		const response = await app.inject({
+			method: 'POST',
+			url: '/auth/session',
+			headers: { host: HOST, [HANDOFF_HEADER]: '1' },
+		});
+		expect(response.statusCode).toBe(204);
+		expect(response.headers['set-cookie']).toContain(`aegis_session=${TEST_API_TOKEN}`);
+		await app.close();
+	});
+
 	it('authenticates ordinary API requests from the cookie alone', async () => {
 		const app = makeApp();
 		const response = await app.inject({
