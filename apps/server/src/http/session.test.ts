@@ -24,6 +24,32 @@ describe('session cookie helpers', () => {
 		expect(parseSessionCookie(`x=${'a'.repeat(9_000)}`)).toBeNull();
 	});
 
+	it('rejects duplicate session entries, including malformed duplicates', () => {
+		// Duplicates of unrelated names are harmless.
+		expect(parseSessionCookie(`theme=dark; theme=light; ${SESSION_COOKIE_NAME}=${TOKEN}`)).toBe(
+			TOKEN,
+		);
+
+		// Two session cookies are ambiguous and must not authenticate.
+		expect(
+			parseSessionCookie(`${SESSION_COOKIE_NAME}=${TOKEN}; ${SESSION_COOKIE_NAME}=${TOKEN}`),
+		).toBeNull();
+
+		// A malformed duplicate is still a duplicate, regardless of order.
+		expect(
+			parseSessionCookie(`${SESSION_COOKIE_NAME}=${TOKEN}; ${SESSION_COOKIE_NAME}=short`),
+		).toBeNull();
+		expect(
+			parseSessionCookie(`${SESSION_COOKIE_NAME}=short; ${SESSION_COOKIE_NAME}=${TOKEN}`),
+		).toBeNull();
+
+		// A bare name is an occurrence, and is itself malformed.
+		expect(
+			parseSessionCookie(`${SESSION_COOKIE_NAME}=${TOKEN}; ${SESSION_COOKIE_NAME}`),
+		).toBeNull();
+		expect(parseSessionCookie(SESSION_COOKIE_NAME)).toBeNull();
+	});
+
 	it('builds an HttpOnly, SameSite=Strict, host-only session cookie by default', () => {
 		const cookie = buildSessionCookie(TOKEN);
 		expect(cookie).toContain(`${SESSION_COOKIE_NAME}=${TOKEN}`);

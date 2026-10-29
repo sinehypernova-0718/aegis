@@ -11,10 +11,14 @@
  * browser keeps it in memory and drops it when the browser session ends. It is
  * host-only (no `Domain`), so it is never sent to a sibling hostname.
  *
- * `Secure` is intentionally absent: Aegis binds plain HTTP on loopback, so a
- * `Secure` cookie would never be sent. Loopback traffic does not cross a
- * network boundary; the `Host`/`Origin` checks in `security.ts` are the
- * equivalent transport guard.
+ * `Secure` is intentionally absent: Aegis serves plain HTTP on `127.0.0.1`.
+ * This is an explicit local-HTTP limitation: the cookie has no transport
+ * confidentiality or integrity. The `Host`/`Origin` checks validate request
+ * metadata; they are not a substitute for TLS. Browser support for `Secure` on
+ * loopback is inconsistent (Chrome/Firefox accept it on `localhost`, Safari
+ * does not, and `127.0.0.1` is not consistently documented), so adding it
+ * unconditionally would silently drop the cookie for some users. See
+ * `docs/local-auth-handoff.md` ("Local HTTP limitation").
  *
  * The handoff is not an OS-user boundary. Loopback is shared by local users,
  * and a non-browser process can reproduce the browser request. See
@@ -33,23 +37,40 @@ const MAX_COOKIE_HEADER_LENGTH = 8_192;
 /**
  * Extract the Aegis session value from a `Cookie` header.
  *
- * Returns `null` for a missing, oversized, malformed, or duplicate-free header
- * whose value is not a valid token shape. Parsing is linear and never throws so
- * it is safe to call on untrusted input.
+ * Returns `null` when the header is missing, oversized, or malformed, when the
+ * value is not a valid token shape, or when more than one `aegis_session` entry
+ * is present. Duplicate session entries are rejected outright rather than
+ * resolved by position: an ambiguous cookie header must not authenticate.
+ * Unrelated cookie names are ignored. Parsing is linear and never throws, so it
+ * is safe to call on untrusted input.
  */
 export function parseSessionCookie(cookieHeader: string | undefined): string | null {
 	if (typeof cookieHeader !== 'string') return null;
 	if (cookieHeader.length === 0 || cookieHeader.length > MAX_COOKIE_HEADER_LENGTH) return null;
 
+	let sessionValue: string | null = null;
+	let seenSessionEntry = false;
+
 	for (const pair of cookieHeader.split(';')) {
 		const separator = pair.indexOf('=');
-		if (separator === -1) continue;
-		if (pair.slice(0, separator).trim() !== SESSION_COOKIE_NAME) continue;
+		// A bare name (no `=`) can still be a session entry, and therefore a
+		// duplicate; treat the whole trimmed pair as the name in that case.
+		const name = separator === -1 ? pair.trim() : pair.slice(0, separator).trim();
+		if (name !== SESSION_COOKIE_NAME) continue;
+
+		// Reject a second occurrence even when the first was well-formed and
+		// even when the duplicate itself is malformed.
+		if (seenSessionEntry) return null;
+		seenSessionEntry = true;
+
+		// A session entry without a value is malformed.
+		if (separator === -1) return null;
 		const value = pair.slice(separator + 1).trim();
-		return SESSION_VALUE_PATTERN.test(value) ? value : null;
+		if (!SESSION_VALUE_PATTERN.test(value)) return null;
+		sessionValue = value;
 	}
 
-	return null;
+	return sessionValue;
 }
 
 export interface SessionCookieOptions {

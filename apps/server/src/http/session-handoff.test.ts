@@ -149,6 +149,20 @@ describe('local auth handoff: browser session cookie', () => {
 		await app.close();
 	});
 
+	it('rejects ambiguous duplicate session cookies at the auth boundary', async () => {
+		const app = makeApp();
+		const response = await app.inject({
+			method: 'GET',
+			url: `/vaults/${TEST_VAULT_ID}/status`,
+			headers: {
+				host: HOST,
+				cookie: `aegis_session=${TEST_API_TOKEN}; aegis_session=${TEST_API_TOKEN}`,
+			},
+		});
+		expect(response.statusCode).toBe(401);
+		await app.close();
+	});
+
 	it('probes the session without the token and clears it on sign-out', async () => {
 		const app = makeApp();
 		const authenticated = await app.inject({

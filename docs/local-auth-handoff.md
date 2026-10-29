@@ -65,14 +65,38 @@ Properties:
   request therefore cannot install a session, and a cross-site request cannot
   use one. These are **browser** controls; they do not authenticate a
   non-browser local caller (see the trust boundary below).
-- **No `Secure` flag.** Aegis binds plain HTTP on loopback (`127.0.0.1`), where a
-  `Secure` cookie would never be sent. Loopback traffic does not cross a network
-  boundary; the `Host`/`Origin` checks are the transport guard. If Aegis ever
-  serves over TLS, add `Secure` to `buildSessionCookie`.
+- **No `Secure` flag.** Aegis serves plain HTTP on `127.0.0.1`, so the cookie
+  has no TLS protection. This is a deliberate, documented limitation, not an
+  equivalent control; see
+  [Local HTTP limitation](#local-http-limitation-no-secure-cookie).
 - **No CORS.** The UI is served from the same origin as the API. A separate dev
   server should proxy `/auth` and `/vaults` so the browser still sees one
   origin; enabling cross-origin credentialed requests would also require an
   explicit CORS policy and is intentionally out of scope.
+
+### Local HTTP limitation: no `Secure` cookie
+
+Aegis serves plain HTTP on `127.0.0.1`, so the session cookie has no transport
+confidentiality or integrity. A local process with enough privilege to capture
+loopback traffic could read it. The `Host`/`Origin`/`Sec-Fetch-Site` checks
+validate request metadata; they are **not** a substitute for TLS.
+
+We verified browser behavior instead of adding `Secure` blindly:
+- MDN documents that `Secure` cookies are exempt from the HTTPS requirement on
+  `localhost`, but that exception is not supported by Safari.
+- The
+  [httpwg compatibility report](https://github.com/httpwg/http-extensions/issues/2605)
+  found that Chrome and Firefox accept `Secure` on `http://localhost` while
+  Safari rejects it; `__Host-`/`__Secure-` prefix support is even less
+  consistent.
+- Behavior on the literal loopback address `127.0.0.1` (which Aegis binds) is
+  not consistently documented across browsers.
+
+Because the UI may be reached as either `localhost` or `127.0.0.1`, an
+unconditional `Secure` could make the handoff silently fail on some supported
+browsers or addresses. Aegis therefore omits `Secure` and documents the
+limitation. If Aegis moves to HTTPS, or a deployment verifies `Secure` on its
+chosen loopback address and browsers, add it in `buildSessionCookie`.
 
 ## Trust boundary: the listener, not the OS user
 
@@ -154,9 +178,11 @@ on disk. A supplied `AEGIS_API_TOKEN` disables the file entirely.
 
 ## Tests
 
-- `apps/server/src/http/session.test.ts` — cookie format/parsing bounds.
+- `apps/server/src/http/session.test.ts` — cookie format/parsing bounds and
+  rejection of duplicate session entries.
 - `apps/server/src/http/session-handoff.test.ts` — issuance, CSRF rejection,
-  cookie authentication, probe, sign-out, and "the token never reaches the log".
+  cookie authentication, duplicate-cookie rejection, probe, sign-out, and "the
+  token never reaches the log".
 - `apps/web/src/auth/session.test.ts` — the UI requests the cookie without a
   token in the URL/body/headers and never adds `Authorization`.
 
