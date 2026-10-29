@@ -52,14 +52,15 @@ export interface RunningServer extends AegisRuntime {
 }
 
 /**
- * Publish the per-launch token for the local UI.
+ * Publish the per-launch token for a non-browser local client (native launcher,
+ * CLI, or automation). The trusted browser UI does NOT read this file; it gets
+ * the token from the `HttpOnly` cookie handoff (`POST /auth/session`). Writing
+ * the file is therefore opt-in via `AEGIS_TOKEN_FILE`.
  *
  * `mode` is a POSIX permission and is only enforced on POSIX platforms. On
  * Windows the effective access is governed entirely by the parent directory's
- * ACL, NOT by `0o600`; the default location lives under the per-user temp
- * directory, but Windows ACL verification for the configured directory remains
- * a deployment prerequisite before the UI reads this file. Do not treat the
- * `mode` argument as a Windows security guarantee.
+ * ACL, NOT by `0o600`. Do not treat the `mode` argument as a Windows security
+ * guarantee; verify the directory ACL before exposing this file.
  */
 function writeTokenFile(path: string, token: string): void {
 	mkdirSync(dirname(path), { recursive: true, mode: 0o700 });

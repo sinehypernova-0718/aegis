@@ -1,5 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { UnlockThrottleConfig } from '../config.js';
+import { parseSessionCookie } from './session.js';
 
 /** Generate a cryptographically unpredictable per-launch bearer token. */
 export function createApiToken(): string {
@@ -25,6 +26,15 @@ function digest(value: string): Buffer {
  * Tokens are compared as SHA-256 digests so differing lengths do not leak
  * through `timingSafeEqual`. The accepted header shape is bounded to avoid
  * hashing arbitrarily large attacker-controlled input.
+ *
+ * The same secret is accepted from either:
+ *  - `Authorization: Bearer <token>` for non-browser clients (CLI, native
+ *    launcher, tests), or
+ *  - the `HttpOnly` `aegis_session` cookie installed by `POST /auth/session`
+ *    for the trusted browser UI.
+ *
+ * The cookie path is what removes the token-file/browser mismatch: page scripts
+ * never need to see the token, while the browser still authenticates requests.
  */
 export class BearerTokenAuthenticator {
 	readonly #expectedDigest: Buffer;
@@ -36,10 +46,15 @@ export class BearerTokenAuthenticator {
 		this.#expectedDigest = digest(token);
 	}
 
-	verify(header: string | undefined): boolean {
-		const token = parseBearer(header);
-		if (token === null) return false;
-		return timingSafeEqual(digest(token), this.#expectedDigest);
+	verify(authorizationHeader: string | undefined, cookieHeader?: string): boolean {
+		const fromHeader = parseBearer(authorizationHeader);
+		if (fromHeader !== null && timingSafeEqual(digest(fromHeader), this.#expectedDigest)) {
+			return true;
+		}
+
+		const fromCookie = parseSessionCookie(cookieHeader);
+		if (fromCookie === null) return false;
+		return timingSafeEqual(digest(fromCookie), this.#expectedDigest);
 	}
 }
 
