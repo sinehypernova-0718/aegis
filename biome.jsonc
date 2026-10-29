@@ -15,7 +15,11 @@
 			"!**/coverage",
 			"!**/.turbo",
 			"!**/.claude",
-			"!**/.serena"
+			"!**/.serena",
+			// Biome's Markdown table formatter is not idempotent for this wide,
+			// documentation-only planning file (it oscillates by one space per run),
+			// which would make the format check unstable. Excluded from formatting only.
+			"!docs/implementation-plan-domain-vertical-slice.md"
 		]
 	},
 

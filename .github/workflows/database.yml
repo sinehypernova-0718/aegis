@@ -3,12 +3,30 @@ name: database
 on:
   push:
     paths:
-      - 'packages/database/**'
-      - '.github/workflows/database.yml'
+      - "apps/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "tsconfig*.json"
+      - "vitest*.ts"
+      - "biome.jsonc"
+      - ".oxlintrc.json"
+      - ".github/workflows/database.yml"
   pull_request:
     paths:
-      - 'packages/database/**'
-      - '.github/workflows/database.yml'
+      - "apps/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "tsconfig*.json"
+      - "vitest*.ts"
+      - "biome.jsonc"
+      - ".oxlintrc.json"
+      - ".github/workflows/database.yml"
 
 jobs:
   database:
@@ -43,3 +61,36 @@ jobs:
       - run: pnpm --filter @aegis/database build
       - run: pnpm --filter @aegis/database db:migrate
       - run: pnpm --filter @aegis/database test
+
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: aegis
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres -d aegis"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/aegis
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: pnpm
+          node-version: 24
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @aegis/database db:migrate
+      - run: pnpm --filter @aegis/server test
