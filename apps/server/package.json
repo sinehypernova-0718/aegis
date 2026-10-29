@@ -25,7 +25,8 @@
 		"@aegis/crypto": "workspace:*",
 		"@aegis/database": "workspace:*",
 		"@aegis/domain": "workspace:*",
-		"fastify": "^5.12.7"
+		"fastify": "^5.12.7",
+		"zod": "^4.6.7"
 	},
 	"devDependencies": {
 		"@types/node": "24.19.2",
