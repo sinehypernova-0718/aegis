@@ -9,6 +9,8 @@ export const DEFAULT_SERVER_PORT = 7_787;
 /** The largest credential body is ~140 KiB after JSON escaping; 256 KiB is safe. */
 export const DEFAULT_BODY_LIMIT_BYTES = 262_144;
 export const DEFAULT_SHUTDOWN_TIMEOUT_MS = 10_000;
+/** Additional grace period after force-closing sockets, before giving up on drain. */
+export const DEFAULT_SHUTDOWN_FORCE_TIMEOUT_MS = 2_000;
 export const DEFAULT_READINESS_TIMEOUT_MS = 2_000;
 export const DEFAULT_IDLE_TIMEOUT_MS = 300_000;
 export const DEFAULT_LOG_LEVEL = 'info' as const;
@@ -35,6 +37,7 @@ export interface ServerConfig {
 	readonly port: number;
 	readonly bodyLimitBytes: number;
 	readonly shutdownTimeoutMs: number;
+	readonly shutdownForceTimeoutMs: number;
 	readonly readinessTimeoutMs: number;
 	readonly idleTimeoutMs: number;
 	/** Explicit bearer token (development/tests). `null` means generate per launch. */
@@ -150,6 +153,13 @@ export function readServerConfig(environment: NodeJS.ProcessEnv = process.env): 
 			environment,
 			'AEGIS_SHUTDOWN_TIMEOUT_MS',
 			DEFAULT_SHUTDOWN_TIMEOUT_MS,
+			100,
+			120_000,
+		),
+		shutdownForceTimeoutMs: readInteger(
+			environment,
+			'AEGIS_SHUTDOWN_FORCE_TIMEOUT_MS',
+			DEFAULT_SHUTDOWN_FORCE_TIMEOUT_MS,
 			100,
 			120_000,
 		),

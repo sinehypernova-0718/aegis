@@ -10,6 +10,7 @@ describe('server config', () => {
 		expect(config.host).toBe(LOOPBACK_HOST);
 		expect(config.port).toBe(7_787);
 		expect(config.idleTimeoutMs).toBe(300_000);
+		expect(config.shutdownForceTimeoutMs).toBe(2_000);
 		expect(config.apiToken).toBeNull();
 		expect(config.tokenFile).toBe(DEFAULT_TOKEN_FILE);
 		expect(config.allowedOrigins).toEqual(['http://127.0.0.1:7787', 'http://localhost:7787']);

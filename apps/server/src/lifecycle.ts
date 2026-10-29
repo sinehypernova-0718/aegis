@@ -51,10 +51,20 @@ export interface RunningServer extends AegisRuntime {
 	readonly address: string;
 }
 
+/**
+ * Publish the per-launch token for the local UI.
+ *
+ * `mode` is a POSIX permission and is only enforced on POSIX platforms. On
+ * Windows the effective access is governed entirely by the parent directory's
+ * ACL, NOT by `0o600`; the default location lives under the per-user temp
+ * directory, but Windows ACL verification for the configured directory remains
+ * a deployment prerequisite before the UI reads this file. Do not treat the
+ * `mode` argument as a Windows security guarantee.
+ */
 function writeTokenFile(path: string, token: string): void {
 	mkdirSync(dirname(path), { recursive: true, mode: 0o700 });
 	// Remove any pre-existing file so `mode` is applied on creation rather than
-	// silently inheriting broader permissions from a stale file.
+	// silently inheriting broader permissions from a stale file (POSIX).
 	rmSync(path, { force: true });
 	writeFileSync(path, token, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
 }
@@ -83,6 +93,82 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): 
 	});
 }
 
+type RaceResult<T> =
+	| { readonly timedOut: true }
+	| { readonly timedOut: false; readonly ok: true; readonly value: T }
+	| { readonly timedOut: false; readonly ok: false; readonly error: unknown };
+
+/**
+ * Race a promise against a deadline without leaking the promise as an unhandled
+ * rejection. The observed branch always resolves, so when the deadline wins the
+ * original promise is still observed but the caller is free to continue.
+ */
+function raceWithTimeout<T>(
+	promise: Promise<T>,
+	timeoutMs: number,
+	label: string,
+): Promise<RaceResult<T>> {
+	const observed = promise.then<RaceResult<T>, RaceResult<T>>(
+		(value) => ({ timedOut: false, ok: true, value }),
+		(error: unknown) => ({
+			timedOut: false,
+			ok: false,
+			error: error ?? new Error(`${label} failed`),
+		}),
+	);
+	if (timeoutMs <= 0) return observed;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const timeout = new Promise<RaceResult<T>>((resolve) => {
+		timer = setTimeout(() => resolve({ timedOut: true }), timeoutMs);
+		if (typeof timer === 'object' && timer !== null && 'unref' in timer) timer.unref();
+	});
+	return Promise.race([observed, timeout]).finally(() => {
+		if (timer !== undefined) clearTimeout(timer);
+	});
+}
+
+interface HttpDrainOutcome {
+	readonly drained: boolean;
+	readonly error?: unknown;
+}
+
+/**
+ * Stop accepting new connections and wait for in-flight requests to finish.
+ *
+ * A graceful deadline bounds the wait. If it expires we force-close the
+ * remaining sockets and await the same `close()` promise again (never a second
+ * `close()`), because Fastify resolves `close()` only once in-flight handlers
+ * have completed. `drained` is true only when that completion is confirmed;
+ * callers must not release resources still reachable by a handler when it is
+ * false.
+ */
+async function drainHttpConnections(
+	app: FastifyInstance,
+	graceMs: number,
+	forceMs: number,
+): Promise<HttpDrainOutcome> {
+	const closing = app.close();
+
+	const graceful = await raceWithTimeout(closing, graceMs, 'http shutdown');
+	if (!graceful.timedOut) {
+		// Resolved, or rejected by a close hook: either way the server stopped
+		// accepting and in-flight requests are done. Keep the error for reporting.
+		return graceful.ok ? { drained: true } : { drained: true, error: graceful.error };
+	}
+
+	app.server.closeIdleConnections();
+	app.server.closeAllConnections();
+
+	const forced = await raceWithTimeout(closing, forceMs, 'http force shutdown');
+	if (forced.timedOut) {
+		return {
+			drained: false,
+			error: new Error('http connections did not drain before the shutdown deadline'),
+		};
+	}
+	return forced.ok ? { drained: true } : { drained: true, error: forced.error };
+}
+
 async function settle(action: () => Promise<unknown>, errors: unknown[]): Promise<void> {
 	try {
 		await action();
@@ -109,23 +195,35 @@ function createShutdown(params: {
 		shutdownPromise ??= (async () => {
 			const errors: unknown[] = [];
 
-			// 1. Stop accepting connections and drain/reject outstanding requests.
-			//    `app.close()` waits for in-flight handlers, which in turn await
-			//    their domain operations, so the session drain below is normally a
-			//    no-op. The timeout bounds a stuck connection.
-			await settle(
-				() => withTimeout(params.app.close(), params.config.shutdownTimeoutMs, 'http shutdown'),
-				errors,
+			// 1. Stop accepting connections and confirm in-flight requests have
+			//    drained. On a missed deadline we force-close sockets and re-await
+			//    the same `close()`; the pool is not released until drain is
+			//    confirmed.
+			const drain = await drainHttpConnections(
+				params.app,
+				params.config.shutdownTimeoutMs,
+				params.config.shutdownForceTimeoutMs,
 			);
+			if (drain.error !== undefined) errors.push(drain.error);
 
-			// 2. Lock and dispose every vault session (wipes DEK material).
+			// 2. Block new domain work and wipe key material. `lockAll` drains
+			//    in-flight session operations and fails new ones closed, so it is
+			//    safe even if HTTP has not fully drained.
 			await settle(() => params.container.sessionManager.lockAll(), errors);
 
 			// 3. Invalidate ephemeral authorization/throttle state.
 			params.unlockThrottle.reset();
 
-			// 4. Close the database pool last, once no domain work can use it.
-			await settle(() => params.databaseClient.close(), errors);
+			// 4. Only close the pool once drain is confirmed. `GetVaultStatus` and
+			//    `UnlockVault` query the repository outside a session scope, so an
+			//    in-flight handler could still use the pool. When drain cannot be
+			//    confirmed we leave the pool open and surface the error; the
+			//    signal path terminates the process instead.
+			if (drain.drained) {
+				await settle(() => params.databaseClient.close(), errors);
+			} else {
+				errors.push(new Error('database pool left open: http connections did not drain'));
+			}
 
 			// 5. Remove the per-launch token handoff file.
 			if (params.tokenFile !== null) {

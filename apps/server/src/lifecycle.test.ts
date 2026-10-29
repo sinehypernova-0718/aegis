@@ -119,6 +119,70 @@ describe('application lifecycle: shutdown', () => {
 		expect(order).toEqual(['http', 'sessions', 'db']);
 	});
 
+	it('force-closes connections when the graceful drain deadline expires', async () => {
+		const order: string[] = [];
+		let resolveClose!: () => void;
+		const closePromise = new Promise<void>((resolve) => {
+			resolveClose = resolve;
+		});
+		const app = createFakeApp({
+			onClose: () => order.push('close'),
+			onForceClose: () => {
+				order.push('force-close');
+				resolveClose();
+			},
+			closePromise,
+		});
+		const { factories, db, fake } = makeFactories({ buildApplication: () => app.app });
+		fake.container.sessionManager.lockAll = async () => {
+			order.push('sessions');
+		};
+		db.client.close = async () => {
+			order.push('db');
+		};
+
+		const runtime = await createRuntime({
+			config: createTestServerConfig({ shutdownTimeoutMs: 30, shutdownForceTimeoutMs: 500 }),
+			factories,
+			logger: false,
+		});
+		await runtime.shutdown();
+
+		// Drain only completed after sockets were force-closed; the pool was
+		// closed afterwards, never while close() was still pending.
+		expect(app.calls.forceClose).toBe(1);
+		expect(order).toEqual(['close', 'force-close', 'sessions', 'db']);
+	});
+
+	it('does not close the pool and wipes sessions when HTTP never drains', async () => {
+		const order: string[] = [];
+		const never = new Promise<void>(() => {});
+		const app = createFakeApp({
+			onForceClose: () => order.push('force-close'),
+			closePromise: never,
+		});
+		const { factories, db, fake } = makeFactories({ buildApplication: () => app.app });
+		fake.container.sessionManager.lockAll = async () => {
+			order.push('sessions');
+		};
+		db.client.close = async () => {
+			order.push('db');
+		};
+
+		const runtime = await createRuntime({
+			config: createTestServerConfig({ shutdownTimeoutMs: 20, shutdownForceTimeoutMs: 20 }),
+			factories,
+			logger: false,
+		});
+
+		// A request may still be running, so the pool must stay open. Key
+		// material is still wiped by lockAll, and the timeout is surfaced.
+		await expect(runtime.shutdown()).rejects.toThrow(/did not drain/);
+		expect(app.calls.forceClose).toBe(1);
+		expect(order).toEqual(['force-close', 'sessions']);
+		expect(db.calls.close).toBe(0);
+	});
+
 	it('is idempotent and shares one shutdown promise', async () => {
 		let sessions = 0;
 		let closes = 0;

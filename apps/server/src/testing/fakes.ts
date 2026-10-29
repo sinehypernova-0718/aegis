@@ -213,31 +213,45 @@ export function createFakeDatabaseClient(): FakeDatabaseClient {
 
 export interface FakeAppHooks {
 	onClose?: () => void;
+	onForceClose?: () => void;
 	closeError?: Error;
 	listenError?: Error;
+	/**
+	 * When provided, `close()` awaits this promise before resolving, so a test
+	 * can model HTTP drain that only completes after connections are force-closed.
+	 */
+	closePromise?: Promise<void>;
 }
 
 export interface FakeApp {
 	readonly app: FastifyInstance;
-	readonly calls: { close: number; listen: number };
+	readonly calls: { close: number; listen: number; forceClose: number };
 }
 
 /**
- * Minimal Fastify double for lifecycle tests. Only `close` and `listen` are
- * exercised; the cast is confined to test code.
+ * Minimal Fastify double for lifecycle tests. Only `close`, `listen`, and the
+ * server connection-closing hooks are exercised; the cast is confined to tests.
  */
 export function createFakeApp(hooks: FakeAppHooks = {}): FakeApp {
-	const calls = { close: 0, listen: 0 };
+	const calls = { close: 0, listen: 0, forceClose: 0 };
 	const app = {
 		close: async () => {
 			calls.close += 1;
 			hooks.onClose?.();
+			if (hooks.closePromise) await hooks.closePromise;
 			if (hooks.closeError) throw hooks.closeError;
 		},
 		listen: async () => {
 			calls.listen += 1;
 			if (hooks.listenError) throw hooks.listenError;
 			return 'http://127.0.0.1:7787';
+		},
+		server: {
+			closeIdleConnections: () => {},
+			closeAllConnections: () => {
+				calls.forceClose += 1;
+				hooks.onForceClose?.();
+			},
 		},
 		log: { error: () => {}, info: () => {}, warn: () => {} },
 	} as unknown as FastifyInstance;
@@ -250,6 +264,7 @@ export function createTestServerConfig(overrides: Partial<ServerConfig> = {}): S
 		port: 7_787,
 		bodyLimitBytes: 4_096,
 		shutdownTimeoutMs: 2_000,
+		shutdownForceTimeoutMs: 2_000,
 		readinessTimeoutMs: 1_000,
 		idleTimeoutMs: 300_000,
 		apiToken: TEST_API_TOKEN,
