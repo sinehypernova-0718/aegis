@@ -9,6 +9,7 @@ import { registerErrorHandler, registerNotFoundHandler } from './error-handler.j
 import { UnauthenticatedError } from './errors.js';
 import { registerCredentialRoutes } from './routes/credentials.js';
 import { registerHealthRoutes } from './routes/health.js';
+import { registerSessionRoutes } from './routes/session.js';
 import { registerVaultRoutes, type AuthenticateHandler } from './routes/vaults.js';
 import { registerSecurityHeaders, registerSecurityHooks } from './security.js';
 
@@ -88,7 +89,10 @@ export function buildServer(options: BuildServerOptions): FastifyInstance {
 
 	const authenticator = new BearerTokenAuthenticator(options.apiToken);
 	const authenticateHandler: AuthenticateHandler = async (request) => {
-		if (!authenticator.verify(request.headers.authorization)) {
+		// Accept the non-browser bearer header or the browser's HttpOnly session
+		// cookie. Page scripts cannot read the cookie, so XSS cannot exfiltrate the
+		// long-lived token even though it can still act inside the page.
+		if (!authenticator.verify(request.headers.authorization, request.headers.cookie)) {
 			throw new UnauthenticatedError();
 		}
 	};
@@ -96,6 +100,7 @@ export function buildServer(options: BuildServerOptions): FastifyInstance {
 	const unlockThrottle = options.unlockThrottle ?? new UnlockThrottle(DEFAULT_UNLOCK_THROTTLE);
 
 	registerHealthRoutes(app, { checkReadiness: options.checkReadiness });
+	registerSessionRoutes(app, { apiToken: options.apiToken, authenticate: authenticateHandler });
 	registerVaultRoutes(app, {
 		container: options.container,
 		authenticate: authenticateHandler,

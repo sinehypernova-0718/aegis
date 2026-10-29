@@ -1,5 +1,3 @@
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { type DatabaseClientConfig, readDatabaseClientConfig } from '@aegis/database';
 
 /** The only supported listener host. Aegis is a local-first application. */
@@ -14,7 +12,6 @@ export const DEFAULT_SHUTDOWN_FORCE_TIMEOUT_MS = 2_000;
 export const DEFAULT_READINESS_TIMEOUT_MS = 2_000;
 export const DEFAULT_IDLE_TIMEOUT_MS = 300_000;
 export const DEFAULT_LOG_LEVEL = 'info' as const;
-export const DEFAULT_TOKEN_FILE = join(tmpdir(), 'aegis', 'server.token');
 
 export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
 
@@ -42,7 +39,12 @@ export interface ServerConfig {
 	readonly idleTimeoutMs: number;
 	/** Explicit bearer token (development/tests). `null` means generate per launch. */
 	readonly apiToken: string | null;
-	/** Where a generated token is published for the local UI. `null` when a token is supplied. */
+	/**
+	 * Opt-in file where a generated token is published for a non-browser local
+	 * client (native launcher or CLI). `null` by default: the trusted browser UI
+	 * receives the token through the `HttpOnly` cookie handoff described in
+	 * `http/session.ts`, so no secret is written to disk unless requested.
+	 */
 	readonly tokenFile: string | null;
 	readonly allowedOrigins: readonly string[];
 	readonly database: DatabaseClientConfig;
@@ -131,13 +133,14 @@ export function readServerConfig(environment: NodeJS.ProcessEnv = process.env): 
 	}
 	const apiToken = suppliedToken !== undefined && suppliedToken !== '' ? suppliedToken : null;
 
+	// A generated token is delivered to the browser over the HttpOnly cookie
+	// handoff, not a file. Publishing it to disk is opt-in and only for a
+	// non-browser local client that cannot use the cookie.
 	const configuredTokenFile = environment.AEGIS_TOKEN_FILE?.trim();
 	const tokenFile =
-		apiToken !== null
+		apiToken !== null || configuredTokenFile === undefined || configuredTokenFile === ''
 			? null
-			: configuredTokenFile !== undefined && configuredTokenFile !== ''
-				? configuredTokenFile
-				: DEFAULT_TOKEN_FILE;
+			: configuredTokenFile;
 
 	return {
 		host: LOOPBACK_HOST,
