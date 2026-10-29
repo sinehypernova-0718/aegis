@@ -20,7 +20,7 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "tsdown && tsc -p tsconfig.typecheck.json --declaration --emitDeclarationOnly",
+		"build": "tsdown && rimraf dist/tsconfig.typecheck.tsbuildinfo && tsc -p tsconfig.typecheck.json --declaration --emitDeclarationOnly",
 		"dev": "tsdown --watch",
 		"typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
 		"test": "vitest run",

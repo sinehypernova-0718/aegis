@@ -6,7 +6,7 @@ import type {
 	CredentialRepositoryPort,
 	NewCredentialRecordRow,
 } from '../ports/credential-repository.js';
-import type { Clock, IdGenerator } from '../ports/runtime.js';
+import type { Clock, IdGenerator, Scheduler } from '../ports/runtime.js';
 import type {
 	CreateVaultSessionRequest,
 	UnlockVaultSessionRequest,
@@ -254,5 +254,47 @@ export class SequentialIdGenerator implements IdGenerator {
 	generate(): string {
 		this.#n += 1;
 		return `00000000-0000-4000-8000-${String(this.#n).padStart(12, '0')}`;
+	}
+}
+
+export interface ScheduledTask {
+	readonly delayMs: number;
+	readonly callback: () => void;
+	cancelled: boolean;
+}
+
+/**
+ * Deterministic scheduler for tests. Tasks only run when explicitly fired, so
+ * idle-lock behaviour never depends on wall-clock time.
+ */
+export class FakeScheduler implements Scheduler {
+	readonly tasks: ScheduledTask[] = [];
+
+	schedule(delayMs: number, callback: () => void): () => void {
+		const task: ScheduledTask = { delayMs, callback, cancelled: false };
+		this.tasks.push(task);
+		return () => {
+			task.cancelled = true;
+		};
+	}
+
+	get active(): ScheduledTask[] {
+		return this.tasks.filter((task) => !task.cancelled);
+	}
+
+	/** Fire the most recently scheduled, still-active task. */
+	fireLatest(): void {
+		const task = this.active[this.active.length - 1];
+		if (!task) throw new Error('no active scheduled task');
+		task.cancelled = true;
+		task.callback();
+	}
+
+	/** Fire every currently active task (snapshot; later tasks are untouched). */
+	fireAll(): void {
+		for (const task of this.active) {
+			task.cancelled = true;
+			task.callback();
+		}
 	}
 }

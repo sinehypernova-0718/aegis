@@ -6,7 +6,8 @@
 	"license": "Apache-2.0",
 	"type": "module",
 	"scripts": {
-		"build": "tsc",
+		"build": "rimraf dist && tsc -p tsconfig.build.json",
+		"start": "node dist/index.js",
 		"dev": "tsx watch src/index.ts",
 		"typecheck": "tsc --noEmit",
 		"test": "vitest run",
@@ -20,9 +21,12 @@
 		"check": "biome check ."
 	},
 	"dependencies": {
+		"@aegis/contracts": "workspace:*",
 		"@aegis/crypto": "workspace:*",
 		"@aegis/database": "workspace:*",
-		"@aegis/domain": "workspace:*"
+		"@aegis/domain": "workspace:*",
+		"fastify": "^5.12.7",
+		"zod": "^4.6.7"
 	},
 	"devDependencies": {
 		"@types/node": "24.19.2",

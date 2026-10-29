@@ -62,6 +62,15 @@ describe.skipIf(!databaseUrl)('PostgreSQL repository behavior', () => {
 		}
 	});
 
+	it('reports readiness through the client ping', async () => {
+		const client = createDatabaseClient({ connectionString: databaseUrl as string });
+		try {
+			await expect(client.ping()).resolves.toBeUndefined();
+		} finally {
+			await client.close();
+		}
+	});
+
 	it('rejects vault initialization without envelopes', async () => {
 		const client = createDatabaseClient({ connectionString: databaseUrl as string });
 		try {

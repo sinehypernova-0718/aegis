@@ -18,6 +18,7 @@ import {
 import type { VaultSessionManager } from '../../sessions/vault-session-manager.js';
 import { DefaultVaultSessionManager } from '../../sessions/vault-session-manager.js';
 import {
+	FakeScheduler,
 	FakeVaultCryptoPort,
 	FixedClock,
 	InMemoryVaultRepository,
@@ -28,7 +29,7 @@ const PURPOSE = 'primary';
 
 function makeDeps() {
 	const vaultRepository = new InMemoryVaultRepository();
-	const sessionManager = new DefaultVaultSessionManager();
+	const sessionManager = new DefaultVaultSessionManager({ scheduler: new FakeScheduler() });
 	const crypto = new FakeVaultCryptoPort();
 	const clock = new FixedClock();
 	const ids = new SequentialIdGenerator();
@@ -67,7 +68,9 @@ describe('InitializeVault', () => {
 		);
 		expect(deps.crypto.createdSessions[0]?.isDisposed).toBe(true);
 		expect(deps.vaultRepository.vaults.size).toBe(0);
-		expect(deps.sessionManager.isUnlocked(deps.crypto.createdSessions[0]?.vaultId ?? '')).toBe(false);
+		expect(deps.sessionManager.isUnlocked(deps.crypto.createdSessions[0]?.vaultId ?? '')).toBe(
+			false,
+		);
 	});
 
 	it('keeps the vault durable when registration fails after commit', async () => {
@@ -81,6 +84,7 @@ describe('InitializeVault', () => {
 				throw new VaultLockedError();
 			},
 			lock: async () => {},
+			lockAll: async () => {},
 		};
 		const useCase = new InitializeVault({ ...deps, sessionManager: throwingManager });
 		const result = await useCase.execute({ passphrase: 'pw' });

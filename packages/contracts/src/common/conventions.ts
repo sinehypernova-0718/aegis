@@ -20,25 +20,6 @@ export const ERROR_DETAIL_MESSAGE_MAX_LENGTH = 256 as const;
 export const ERROR_MESSAGE_MAX_LENGTH = 512 as const;
 export const REQUEST_ID_MAX_LENGTH = 128 as const;
 
-// Safe error messages — server MUST use safeMessageForCode() for public responses.
-// Raw exceptions, validation details, or secret-bearing input must NOT reach clients.
-export const SAFE_ERROR_MESSAGES = {
-	VALIDATION_ERROR: 'Invalid request data.',
-	UNAUTHENTICATED: 'Authentication required.',
-	FORBIDDEN: 'Access denied.',
-	NOT_FOUND: 'Resource not found.',
-	CONFLICT: 'Resource conflict.',
-	VAULT_LOCKED: 'Vault is locked.',
-	RATE_LIMITED: 'Too many requests.',
-	INTERNAL_ERROR: 'Internal server error.',
-} as const;
-
-export type SafeErrorCode = keyof typeof SAFE_ERROR_MESSAGES;
-
-export function safeMessageForCode(code: SafeErrorCode): string {
-	return SAFE_ERROR_MESSAGES[code];
-}
-
 // Reusable boundary helpers. Strictness stays visible at call sites because
 // `strictObject` is the only object helper and always enables `.strict()`.
 export function boundedString(minimum: number, maximum: number): z.ZodType<string, string> {

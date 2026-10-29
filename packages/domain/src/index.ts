@@ -21,7 +21,7 @@ export {
 } from './errors/domain-errors.js';
 
 // --- Ports ------------------------------------------------------------------
-export type { Clock, IdGenerator } from './ports/runtime.js';
+export type { Clock, IdGenerator, Scheduler } from './ports/runtime.js';
 export type {
 	NewPersistedKeyEnvelope,
 	NewVaultState,
@@ -71,7 +71,11 @@ export type { CredentialCursor } from './credentials/credential-cursor.js';
 
 // --- Sessions ---------------------------------------------------------------
 export { DefaultVaultSessionManager } from './sessions/vault-session-manager.js';
-export type { VaultSessionManager } from './sessions/vault-session-manager.js';
+export type {
+	VaultSessionManager,
+	VaultSessionManagerOptions,
+} from './sessions/vault-session-manager.js';
+export { DEFAULT_VAULT_IDLE_TIMEOUT_MS, systemScheduler } from './sessions/scheduler.js';
 
 // --- Vault use cases --------------------------------------------------------
 export { InitializeVault } from './use-cases/vault/initialize-vault.js';
