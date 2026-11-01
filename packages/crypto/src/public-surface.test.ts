@@ -8,6 +8,8 @@ describe('@aegis/crypto public surface (narrowed)', () => {
 		expect(typeof crypto.unlockVaultSession).toBe('function');
 		expect(typeof crypto.validateVaultKeyEnvelope).toBe('function');
 		expect(typeof crypto.createVaultKeyMaterial).toBe('function');
+		expect(typeof crypto.generateRecoveryKey).toBe('function');
+		expect(typeof crypto.validateRecoveryKey).toBe('function');
 	});
 
 	it('does not expose raw-key primitives', () => {

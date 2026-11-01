@@ -14,8 +14,9 @@ export interface CreateVaultResult {
 	success: boolean;
 	error?: string;
 	/**
-	 * Optional recovery key returned by the backend upon vault creation.
-	 * If omitted by the backend, the frontend does not fabricate one.
+	 * Recovery key issued by the backend exactly once at vault creation.
+	 * The backend always returns one; the store presents it before setup
+	 * completes and it is never persisted client-side.
 	 */
 	recoveryKey?: string;
 }
@@ -30,8 +31,9 @@ export interface VaultClient {
 	unlockVault(passphrase: string): Promise<{ success: boolean; error?: string }>;
 	createVault(passphrase: string, confirmPassphrase: string): Promise<CreateVaultResult>;
 	/**
-	 * Emergency recovery integration boundary.
-	 * Defined as an optional method when backed by recovery-capable backends.
+	 * Emergency recovery: unlock with the recovery key issued at vault
+	 * creation. Optional only so injected test/mock clients can omit it —
+	 * the real backend implements the `POST /vaults/:id/recover` route.
 	 */
 	recoverVault?(recoveryKey: string): Promise<RecoverVaultResult>;
 	lockVault(): Promise<void>;

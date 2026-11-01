@@ -12,6 +12,8 @@ import type {
 	ListCredentialsResult,
 	LockVaultInput,
 	LockVaultResult,
+	RecoverVaultInput,
+	RecoverVaultResult,
 	UnlockVaultInput,
 	UnlockVaultResult,
 	UpdateCredentialInput,
@@ -34,6 +36,7 @@ export interface AppContainer {
 		execute(input: InitializeVaultInput): Promise<InitializeVaultResult>;
 	};
 	readonly unlockVault: { execute(input: UnlockVaultInput): Promise<UnlockVaultResult> };
+	readonly recoverVault: { execute(input: RecoverVaultInput): Promise<RecoverVaultResult> };
 	readonly lockVault: { execute(input: LockVaultInput): Promise<LockVaultResult> };
 	readonly getVaultStatus: {
 		execute(input: GetVaultStatusInput): Promise<GetVaultStatusResult>;

@@ -5,6 +5,8 @@ import {
 	InitializeVaultResponseSchema,
 	LockVaultResponseSchema,
 	PASSPHRASE_MAX_LENGTH,
+	RecoverVaultRequestSchema,
+	RecoverVaultResponseSchema,
 	UnlockVaultRequestSchema,
 	UnlockVaultResponseSchema,
 	VaultIdParamsSchema,
@@ -72,13 +74,35 @@ describe('vault contracts', () => {
 		expect(() => VaultIdParamsSchema.parse({ vaultId: 'nope' })).toThrow();
 	});
 
-	it('validates initialization responses', () => {
-		expect(InitializeVaultResponseSchema.parse({ vaultId: VAULT_ID, status: 'locked' })).toEqual({
+	it('validates initialization responses (recovery key is always issued)', () => {
+		expect(
+			InitializeVaultResponseSchema.parse({
+				vaultId: VAULT_ID,
+				status: 'locked',
+				recoveryKey: 'AEGIS-RCV-7M2W-K4XQ-P2ZF-9QMD-3TVR-H8BC-6LWD',
+			}),
+		).toEqual({
 			vaultId: VAULT_ID,
 			status: 'locked',
+			recoveryKey: 'AEGIS-RCV-7M2W-K4XQ-P2ZF-9QMD-3TVR-H8BC-6LWD',
 		});
+		expect(() =>
+			InitializeVaultResponseSchema.parse({ vaultId: VAULT_ID, status: 'locked' }),
+		).toThrow();
 		expect(() =>
 			InitializeVaultResponseSchema.parse({ vaultId: VAULT_ID, status: 'uninitialized' }),
 		).toThrow();
+	});
+
+	it('validates recovery requests and responses', () => {
+		const key = 'AEGIS-RCV-7M2W-K4XQ-P2ZF-9QMD-3TVR-H8BC-6LWD';
+		expect(RecoverVaultRequestSchema.parse({ recoveryKey: key })).toEqual({ recoveryKey: key });
+		// Retyping variants keep leading/trailing tolerance to nothing: strict.
+		expect(() => RecoverVaultRequestSchema.parse({ recoveryKey: 'short key' })).toThrow();
+		expect(() => RecoverVaultRequestSchema.parse({ recoveryKey: key, extra: true })).toThrow();
+		expect(RecoverVaultResponseSchema.parse({ vaultId: VAULT_ID, status: 'unlocked' })).toEqual({
+			vaultId: VAULT_ID,
+			status: 'unlocked',
+		});
 	});
 });

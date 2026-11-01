@@ -31,11 +31,16 @@ assert.ok(
 	'SettingsView must import and use the ThemeToggle component',
 );
 
-// Test 2: Auto-lock preference is simulated and clearly labeled as prototype
-console.log('Test 2: Auto-lock preference has prototype disclaimer in settings');
+// Test 2: Auto-lock preference scope is stated honestly (device-stored,
+// backend idle-lock authority independent)
+console.log('Test 2: Auto-lock preference states device persistence and backend authority');
 assert.ok(
-	settingsContent.includes('Prototype') || settingsContent.includes('prototype'),
-	'SettingsView must include a prototype disclaimer for session preferences',
+	settingsContent.includes('localStorage') && settingsContent.includes('AEGIS_IDLE_TIMEOUT_MS'),
+	'SettingsView must disclose device persistence (localStorage) and the backend idle-lock window',
+);
+assert.ok(
+	!settingsContent.includes('Mock adapter') && !settingsContent.includes('PROTOTYPE'),
+	'SettingsView must not claim a mock backend or a prototype mode',
 );
 assert.ok(
 	settingsContent.includes('AUTO_LOCK_OPTIONS') || settingsContent.includes('autoLockTimeout'),
@@ -53,11 +58,11 @@ assert.ok(
 	'SettingsView must include a Reset action',
 );
 
-// Test 4: Settings confirmation feedback is non-misleading (session-only, not persisted)
-console.log('Test 4: Save confirmation is labeled as session-only');
+// Test 4: Settings confirmation feedback states where preferences are saved
+console.log('Test 4: Save confirmation states the persistence location');
 assert.ok(
-	settingsContent.includes('session') || settingsContent.includes('this session'),
-	'SettingsView save feedback must clarify it is session state only',
+	settingsContent.includes('saved on this device') || settingsContent.includes('localStorage'),
+	'SettingsView save feedback must clarify it is saved on this device',
 );
 
 // Test 5: Settings does not expose raw secrets or credential values
@@ -84,11 +89,16 @@ assert.ok(
 	'SecurityView must NOT compute a numeric aggregate security score',
 );
 
-// Test 7: Security view clearly labels prototype/simulated items
-console.log('Test 7: Security view labels prototype-only indicators');
+// Test 7: Security view scopes indicator honesty (no fake guarantees, no stale
+// mock-adapter claims)
+console.log('Test 7: Security view makes no false backend claims');
 assert.ok(
-	securityContent.includes('Prototype') || securityContent.includes('prototype'),
-	'SecurityView must label prototype/simulated security properties',
+	!securityContent.includes('mock adapter') && !securityContent.includes('Mock adapter'),
+	'SecurityView must not claim a mock adapter backend',
+);
+assert.ok(
+	securityContent.includes('Argon2id'),
+	'SecurityView must describe the real backend cryptography',
 );
 
 // Test 8: Lock button is present and calls store.lock()
@@ -105,13 +115,16 @@ assert.ok(
 	'SecurityView must include recovery key guidance',
 );
 
-// Test 10: Auto-lock in security view is marked as prototype
-console.log('Test 10: Auto-lock display in security view is labeled as simulated');
+// Test 10: Auto-lock display distinguishes the device preference from the
+// backend's enforced idle-lock window
+console.log('Test 10: Auto-lock display states backend enforcement separately');
 assert.ok(
-	securityContent.includes('SIM') ||
-		securityContent.includes('prototype') ||
-		securityContent.includes('Prototype'),
-	'SecurityView must label auto-lock as a prototype/simulated value',
+	securityContent.includes('AEGIS_IDLE_TIMEOUT_MS') || securityContent.includes('backend enforces'),
+	'SecurityView must call out the backend-enforced idle auto-lock window',
+);
+assert.ok(
+	!securityContent.includes('SIM'),
+	'SecurityView must not label auto-lock as a simulated ("SIM") value',
 );
 
 // ─── AppSidebar ─────────────────────────────────────────────────────────────

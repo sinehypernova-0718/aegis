@@ -101,6 +101,7 @@ export class FakeVaultCryptoPort implements VaultCryptoPort {
 	readonly store = new Map<string, Uint8Array>();
 	readonly nonces: string[] = [];
 	readonly createdSessions: FakeVaultSession[] = [];
+	readonly generatedRecoveryKeys: string[] = [];
 	createCount = 0;
 	unlockCount = 0;
 	behavior: FakeUnlockBehavior = 'success';
@@ -109,12 +110,21 @@ export class FakeVaultCryptoPort implements VaultCryptoPort {
 		return this.store;
 	}
 
+	generateRecoveryKey(): string {
+		const key = `AEGIS-RCV-TEST-KEY-${String(this.generatedRecoveryKeys.length + 1).padStart(4, '0')}`;
+		this.generatedRecoveryKeys.push(key);
+		return key;
+	}
+
 	async createVaultSession(
 		input: CreateVaultSessionRequest,
-	): Promise<{ envelope: VaultKeyEnvelope; session: VaultSession }> {
+	): Promise<{ envelope: VaultKeyEnvelope; session: VaultSession; recoveryEnvelope?: VaultKeyEnvelope }> {
 		this.createCount += 1;
 		const session = new FakeVaultSession(input.vaultId, this.store, this.nonces);
 		this.createdSessions.push(session);
+		if (input.recoveryKey !== undefined) {
+			return { envelope: fakeEnvelope(), recoveryEnvelope: fakeEnvelope(), session };
+		}
 		return { envelope: fakeEnvelope(), session };
 	}
 

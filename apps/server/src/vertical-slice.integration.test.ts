@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
-import { describe, expect, it } from 'vitest';
+import { and, eq, inArray } from 'drizzle-orm';
+import { afterAll, describe, expect, it } from 'vitest';
 
 import { unlockVaultSession } from '@aegis/crypto';
-import { createDatabaseClient, vaultKeyEnvelopes, vaultRecords } from '@aegis/database';
+import { createDatabaseClient, vaultKeyEnvelopes, vaultRecords, vaults } from '@aegis/database';
 import {
 	CredentialDecryptionError,
 	CredentialNotFoundError,
@@ -15,6 +15,7 @@ import {
 
 import {
 	PRIMARY_KEY_ENVELOPE_PURPOSE,
+	RECOVERY_KEY_ENVELOPE_PURPOSE,
 	createAegisContainer,
 } from './composition/aegis-container.js';
 import { systemClock, uuidGenerator } from './composition/runtime.js';
@@ -31,6 +32,22 @@ const MARKERS = [
 ];
 
 describe.skipIf(!databaseUrl)('vault vertical slice (real crypto + domain + PostgreSQL)', () => {
+	const createdVaultIds: string[] = [];
+
+	afterAll(async () => {
+		// The test is self-cleaning: integration runs must not leave vault rows
+		// behind in the shared development database.
+		if (createdVaultIds.length === 0) return;
+		const client = createDatabaseClient({ connectionString: databaseUrl as string });
+		try {
+			await client.database.delete(vaultKeyEnvelopes).where(inArray(vaultKeyEnvelopes.vaultId, createdVaultIds));
+			await client.database.delete(vaultRecords).where(inArray(vaultRecords.vaultId, createdVaultIds));
+			await client.database.delete(vaults).where(inArray(vaults.id, createdVaultIds));
+		} finally {
+			await client.close();
+		}
+	});
+
 	it('runs the full lifecycle with encrypted-at-rest payloads', async () => {
 		const client = createDatabaseClient({ connectionString: databaseUrl as string });
 		const passphrase = 'correct horse battery staple';
@@ -45,6 +62,7 @@ describe.skipIf(!databaseUrl)('vault vertical slice (real crypto + domain + Post
 			const initialized = await container.initializeVault.execute({ passphrase });
 			expect(initialized.runtimeState).toBe('unlocked');
 			const { vaultId } = initialized;
+			createdVaultIds.push(vaultId);
 
 			// 2. Create a credential with distinctive markers in every sensitive field.
 			const created = await container.createCredential.execute({
@@ -125,6 +143,7 @@ describe.skipIf(!databaseUrl)('vault vertical slice (real crypto + domain + Post
 
 			// 7. Cross-vault access is rejected.
 			const other = await container.initializeVault.execute({ passphrase: 'another passphrase' });
+			createdVaultIds.push(other.vaultId);
 			await expect(
 				container.getCredential.execute({ vaultId: other.vaultId, id: created.id }),
 			).rejects.toBeInstanceOf(CredentialNotFoundError);
@@ -250,6 +269,31 @@ describe.skipIf(!databaseUrl)('vault vertical slice (real crypto + domain + Post
 				status: 'locked',
 				vaultId,
 			});
+
+			// 14. Recovery: the vault has a dedicated recovery envelope and the key
+			// issued at creation unlocks it even after the in-memory sessions died.
+			expect(initialized.recoveryKey).toMatch(/^AEGIS-RCV-[A-Z2-7]{4}(-[A-Z2-7]{4}){7}$/);
+			const [recoveryRow] = await client.database
+				.select()
+				.from(vaultKeyEnvelopes)
+				.where(
+					and(
+						eq(vaultKeyEnvelopes.vaultId, vaultId),
+						eq(vaultKeyEnvelopes.purpose, RECOVERY_KEY_ENVELOPE_PURPOSE),
+					),
+				);
+			expect(recoveryRow?.revokedAt).toBeNull();
+			await expect(
+				restarted.recoverVault.execute({ vaultId, recoveryKey: initialized.recoveryKey }),
+			).resolves.toEqual({ vaultId, status: 'unlocked' });
+			// A wrong recovery key is rejected like a wrong passphrase (after locking).
+			await restarted.lockVault.execute({ vaultId });
+			await expect(
+				restarted.recoverVault.execute({
+					vaultId,
+					recoveryKey: 'AEGIS-RCV-7M2W-K4XQ-P2ZF-9QMD-3TVR-H8BC-6LWD',
+				}),
+			).rejects.toBeInstanceOf(UnlockRejectedError);
 		} finally {
 			await client.close();
 		}

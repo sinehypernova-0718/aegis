@@ -4,11 +4,14 @@
  *
  * Sections:
  *  - Appearance: theme selection with animated ThemeToggle, font and display
- *    preferences (simulated local-state only — no backend writes).
- *  - General: simulated auto-lock timeout selector and session display with
- *    an honest prototype disclaimer so users cannot mistake frontend state
- *    for a real backend security operation.
- *  - About: build identity and environment information.
+ *    preferences (theme is stored locally in the browser).
+ *  - General: auto-lock timeout selector and clipboard-hygiene preference,
+ *    stored on this device (localStorage) via the shared composable. The
+ *    banner and per-item notes state precisely what is real today: the
+ *    backend enforces idle auto-lock on its own configured window; these
+ *    device-stored preferences are not wired to that authority yet, and no
+ *    backend clipboard operation exists.
+ *  - About: build identity and environment information (local backend).
  *
  * Motion: section cards enter with one-time viewport reveals; the theme
  * toggle uses the shared ThemeToggle component so the Sidebar and Settings
@@ -58,8 +61,8 @@ const showSavedBanner = ref(false);
 let savedBannerTimer: ReturnType<typeof setTimeout> | null = null;
 
 function savePreferences() {
-	// Frontend simulation only — preferences are held in reactive state during
-	// the current session. Real persistence requires backend support.
+	// Persistence is immediate (debounced, localStorage) via the shared
+	// composable; this button exists for explicit user confirmation feedback.
 	showSavedBanner.value = true;
 	if (savedBannerTimer) clearTimeout(savedBannerTimer);
 	savedBannerTimer = setTimeout(() => {
@@ -139,21 +142,23 @@ function resetPreferences() {
       </Card>
     </MotionReveal>
 
-    <!-- General preferences — simulated, no backend -->
+    <!-- General preferences -->
     <MotionReveal :once="true" :amount="0.2">
       <Card padding="md">
         <Section title="Session Preferences" :icon="SlidersHorizontal">
-          <!-- Prototype disclaimer — honest about what changes here -->
+          <!-- Honest scope note: device-stored but not wired to the backend's session authority -->
           <div
             class="flex items-start gap-2 p-2.5 rounded-md border mb-3"
             :style="{ background: 'var(--warning-muted)', borderColor: 'var(--warning)' + '40' }"
           >
             <Clock :size="12" class="mt-0.5 shrink-0" :style="{ color: 'var(--warning)' }" />
             <p class="text-[11px] leading-relaxed" :style="{ color: 'var(--text-secondary)' }">
-              <span class="font-semibold" :style="{ color: 'var(--warning)' }">Prototype mode:</span>
-              these preferences are held in session state only. They are not written to the backend
-              and will not persist across page reloads. Real auto-lock enforcement requires backend
-              session management.
+              <span class="font-semibold" :style="{ color: 'var(--warning)' }">Scope:</span>
+              these preferences are stored on this device (localStorage) and survive reloads.
+              The backend enforces idle auto-lock on its own configured window
+              (5 minutes by default, <span class="font-mono">AEGIS_IDLE_TIMEOUT_MS</span>);
+              wiring this selector to that authority is not
+              implemented yet.
             </p>
           </div>
 
@@ -175,8 +180,8 @@ function resetPreferences() {
               />
             </div>
 
-            <!-- Clear clipboard on lock — PROTOTYPE PREFERENCE ONLY:
-                 toggling does not perform any clipboard operation. -->
+            <!-- Clear clipboard on lock — NO EFFECT YET:
+                 toggling performs no clipboard operation. -->
             <div class="flex items-start justify-between gap-4 flex-wrap">
               <div class="flex-1 min-w-[240px]">
                 <div class="flex items-center gap-2 flex-wrap">
@@ -192,9 +197,9 @@ function resetPreferences() {
                   Intended behaviour: remove copied secrets from the clipboard when the vault locks.
                 </p>
                 <p id="clipboard-preference-note" class="text-[10px] mt-1 leading-relaxed" :style="{ color: 'var(--warning)' }">
-                  Enabling this preference does not currently clear the operating-system clipboard.
-                  This is a prototype preference only — no clipboard operation is performed while the
-                  backend implementation is missing.
+                  Enabling this preference does not currently clear the operating-system clipboard —
+                  the backend lock flow has no clipboard step yet, so this toggle changes nothing
+                  until that wiring ships.
                 </p>
               </div>
               <button
@@ -238,7 +243,7 @@ function resetPreferences() {
               aria-atomic="true"
             >
               <CheckCircle2 :size="13" />
-              Preferences saved for this session
+              Preferences saved on this device
             </div>
 
             <div class="flex items-center gap-2 ml-auto">
@@ -271,16 +276,14 @@ function resetPreferences() {
             <KeyValue label="Motion">
               <span class="text-[11px] text-[var(--text-primary)]">motion-v</span>
             </KeyValue>
-            <KeyValue label="Mode">
-              <span
-                class="text-[10px] font-mono px-1.5 py-0.5 rounded"
-                :style="{ color: 'var(--warning)', background: 'var(--warning-muted)' }"
-              >
-                PROTOTYPE
-              </span>
-            </KeyValue>
             <KeyValue label="Backend">
-              <span class="text-[11px] text-[var(--text-tertiary)]">Mock adapter (no real backend connected)</span>
+              <span class="text-[11px] text-[var(--text-primary)]">Local Aegis backend (Fastify)</span>
+            </KeyValue>
+            <KeyValue label="Backend address">
+              <span class="text-[10px] font-mono text-[var(--text-tertiary)]">http://127.0.0.1:7787 (loopback only)</span>
+            </KeyValue>
+            <KeyValue label="Recovery">
+              <span class="text-[11px] text-[var(--text-primary)]">Backend-issued recovery key + recovery unlock</span>
             </KeyValue>
           </div>
         </Section>

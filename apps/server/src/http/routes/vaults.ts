@@ -3,6 +3,8 @@ import {
 	InitializeVaultRequestSchema,
 	InitializeVaultResponseSchema,
 	LockVaultResponseSchema,
+	RecoverVaultRequestSchema,
+	RecoverVaultResponseSchema,
 	UnlockVaultRequestSchema,
 	UnlockVaultResponseSchema,
 	VaultIdParamsSchema,
@@ -20,7 +22,7 @@ export type AuthenticateHandler = (request: FastifyRequest, reply: FastifyReply)
 export interface VaultRouteDeps {
 	readonly container: Pick<
 		AppContainer,
-		'initializeVault' | 'unlockVault' | 'lockVault' | 'getVaultStatus'
+		'initializeVault' | 'unlockVault' | 'recoverVault' | 'lockVault' | 'getVaultStatus'
 	>;
 	readonly authenticate: AuthenticateHandler;
 	readonly unlockThrottle: UnlockThrottle;
@@ -37,6 +39,7 @@ export function registerVaultRoutes(app: FastifyInstance, deps: VaultRouteDeps):
 			InitializeVaultResponseSchema.parse({
 				vaultId: result.vaultId,
 				status: result.runtimeState,
+				recoveryKey: result.recoveryKey,
 			}),
 		);
 	});
@@ -65,6 +68,29 @@ export function registerVaultRoutes(app: FastifyInstance, deps: VaultRouteDeps):
 		} catch (error) {
 			// Only rejected authentication counts; conflicts/not-found do not
 			// let an unauthenticated caller extend an unlocked session's life.
+			if (error instanceof UnlockRejectedError) deps.unlockThrottle.recordFailure();
+			throw error;
+		}
+	});
+
+	app.post('/vaults/:vaultId/recover', { preHandler: deps.authenticate }, async (request, reply) => {
+		const params = parseRequest(VaultIdParamsSchema, request.params);
+		const body = parseRequest(RecoverVaultRequestSchema, request.body);
+
+		// Recovery is an unlock factor: it shares the passphrase throttle so an
+		// attacker cannot bypass the lockout by switching factors.
+		if (deps.unlockThrottle.blocked) {
+			throw new ThrottledError(deps.unlockThrottle.retryAfterMs);
+		}
+
+		try {
+			const result = await deps.container.recoverVault.execute({
+				vaultId: params.vaultId,
+				recoveryKey: body.recoveryKey,
+			});
+			deps.unlockThrottle.recordSuccess();
+			return reply.code(200).send(RecoverVaultResponseSchema.parse(result));
+		} catch (error) {
 			if (error instanceof UnlockRejectedError) deps.unlockThrottle.recordFailure();
 			throw error;
 		}

@@ -4,9 +4,11 @@
  *
  * Layout:
  *  - Session status: current state, session age, and auto-lock display.
- *  - Security posture: individually explained indicators replacing any
- *    aggregate score. Each indicator is either confirmed or described as
- *    prototype-only to avoid misleading users about real backend guarantees.
+ *  - Security posture: individually explained indicators. Each indicator
+ *    states exactly what the real backend guarantees today (Argon2id +
+ *    XChaCha20-Poly1305, authoritative sessions, recovery envelopes) and
+ *    flags the one remaining gap (the device-stored auto-lock preference is
+ *    not wired to the backend's idle-lock authority).
  *  - Protection model: sticky storytelling composition (the explainer panel
  *    holds while three assurance steps scroll past on large screens;
  *    stacks vertically on tablet and mobile).
@@ -15,8 +17,8 @@
  *
  * Constraints honoured:
  *  - No numerical "security score" — only individually labelled indicators.
- *  - Auto-lock timeout displayed as the frontend session preference only,
- *    clearly marked as a prototype value.
+ *  - Auto-lock timeout displayed as the device-stored preference, with the
+ *    backend's independent idle-lock window called out.
  *  - Locking clears sensitive state immediately; no animation gate.
  *  - No fake backend operations implied.
  */
@@ -71,8 +73,8 @@ function formatTimeAgo(dateStr: string): string {
 
 /**
  * Individual security indicators — each carries its own explanation and an
- * honest note about whether it reflects a real backend guarantee or a
- * frontend prototype state. No aggregate score is derived from these.
+ * honest note distinguishing backend-enforced guarantees from device-local
+ * state. No aggregate score is derived from these.
  */
 const indicators = computed(() => [
 	{
@@ -94,9 +96,9 @@ const indicators = computed(() => [
 		id: 'autolock',
 		label: 'Auto-lock timeout',
 		// Reflects the shared session-preference state (editable in Settings).
-		description: `Frontend session preference is set to ${autoLockLabel.value}.`,
-		status: 'ok' as const,
-		note: 'Prototype: this preference is frontend state only and not enforced by the backend.',
+		description: `Device-stored preference is set to ${autoLockLabel.value}.`,
+		status: 'warn' as const,
+		note: 'The backend enforces idle auto-lock independently (5 minutes by default, AEGIS_IDLE_TIMEOUT_MS); this preference is not wired to that authority yet.',
 	},
 	{
 		id: 'clipboard',
@@ -109,16 +111,16 @@ const indicators = computed(() => [
 		id: 'backend-crypto',
 		label: 'Cryptographic operations',
 		description:
-			'All KDF, encryption, and decryption operations are performed by the backend service.',
+			'All KDF, encryption, and decryption operations are performed by the backend service (Argon2id + XChaCha20-Poly1305). The frontend never touches key material.',
 		status: 'info' as const,
-		note: 'Currently running against the mock adapter — no real cryptography is performed in this prototype.',
+		note: null,
 	},
 	{
 		id: 'recovery',
 		label: 'Recovery key configured',
-		description: 'An emergency recovery key was provided during vault setup.',
+		description: 'A recovery key was issued by the backend at vault creation and shown exactly once.',
 		status: 'info' as const,
-		note: 'Recovery key status requires backend confirmation.',
+		note: 'Recovery unlock verifies the key against its dedicated key envelope server-side; the backend stores no readable copy of the key.',
 	},
 ]);
 
@@ -179,14 +181,14 @@ const protections = [
                     : '—' }}
               </span>
             </KeyValue>
-            <KeyValue label="Auto-lock (prototype)">
+            <KeyValue label="Auto-lock preference">
               <span class="flex items-center gap-1.5">
                 <span class="text-[11px] tabular-nums text-[var(--text-primary)]">{{ autoLockLabel }}</span>
                 <span
                   class="text-[9px] font-mono px-1 py-0.5 rounded"
-                  :style="{ color: 'var(--warning)', background: 'var(--warning-muted)' }"
+                  :style="{ color: 'var(--success)', background: 'var(--success-muted)' }"
                 >
-                  SIM
+                  SAVED
                 </span>
               </span>
             </KeyValue>
@@ -250,7 +252,7 @@ const protections = [
               <div class="flex-1 min-w-0">
                 <p class="text-[12px] font-medium text-[var(--text-primary)]">{{ ind.label }}</p>
                 <p class="text-[11px] mt-0.5 leading-relaxed text-[var(--text-tertiary)]">{{ ind.description }}</p>
-                <!-- Per-indicator prototype note -->
+                <!-- Per-indicator scope note -->
                 <p
                   v-if="ind.note"
                   class="text-[10px] mt-1 italic"
@@ -278,8 +280,8 @@ const protections = [
                   is open — scroll through them beside this panel.
                 </p>
                 <p class="text-[10px] mt-3 italic text-[var(--text-disabled)]">
-                  Prototype presentation — backend wiring remains authoritative for
-                  all real security operations.
+                  Real wiring: unlock, idle auto-lock, lock, encrypted storage, and recovery all
+                  execute in the local Aegis backend — the UI reports outcomes only.
                 </p>
               </Section>
             </Card>
@@ -348,7 +350,9 @@ const protections = [
               Store it securely offline — never digitally alongside the vault itself.
             </p>
             <p class="text-[10px] mt-2 italic text-[var(--text-disabled)]">
-              Recovery key management requires backend support. This prototype uses a mock adapter.
+              Recovery unlock is supported by the backend: the key is verified against its own key
+              envelope with server-side Argon2id, and no readable copy of it is ever stored. If you
+              lose both the passphrase and the key, the vault contents cannot be recovered.
             </p>
           </div>
         </Section>

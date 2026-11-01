@@ -2,6 +2,7 @@ import {
 	type VaultKeyEnvelope,
 	type VaultSession,
 	createVaultSession,
+	generateRecoveryKey,
 	unlockVaultSession,
 	validateVaultKeyEnvelope,
 } from '@aegis/crypto';
@@ -16,9 +17,18 @@ import type { VaultCryptoPort } from '@aegis/domain';
  */
 export function createCryptoVaultPort(): VaultCryptoPort {
 	return {
-		createVaultSession: async (input: { vaultId: string; passphrase: string }) => {
-			const { envelope, session } = await createVaultSession(input);
-			return { envelope, session };
+		generateRecoveryKey: (): string => generateRecoveryKey(),
+		createVaultSession: async (input: {
+			vaultId: string;
+			passphrase: string;
+			recoveryKey?: string;
+		}) => {
+			const { envelope, session, recoveryEnvelope } = await createVaultSession(input);
+			return {
+				envelope,
+				session,
+				...(recoveryEnvelope !== undefined ? { recoveryEnvelope } : {}),
+			};
 		},
 		unlockVaultSession: (input: {
 			vaultId: string;

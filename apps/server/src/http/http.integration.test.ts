@@ -1,8 +1,9 @@
+import { inArray } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 
-import { createDatabaseClient, vaultRecords } from '@aegis/database';
+import { createDatabaseClient, vaultKeyEnvelopes, vaultRecords, vaults } from '@aegis/database';
 
 import { UnlockThrottle } from './auth.js';
 import { buildServer } from './build-server.js';
@@ -39,6 +40,24 @@ function inject(app: FastifyInstance, request: TestRequest) {
 }
 
 describe.skipIf(!databaseUrl)('HTTP boundary (real composition root + PostgreSQL)', () => {
+	const createdVaultIds: string[] = [];
+
+	afterAll(async () => {
+		// Self-cleaning: integration runs must not leave vault rows in the
+		// shared development database.
+		if (createdVaultIds.length === 0) return;
+		const client = createDatabaseClient({ connectionString: databaseUrl as string });
+		try {
+			await client.database
+				.delete(vaultKeyEnvelopes)
+				.where(inArray(vaultKeyEnvelopes.vaultId, createdVaultIds));
+			await client.database.delete(vaultRecords).where(inArray(vaultRecords.vaultId, createdVaultIds));
+			await client.database.delete(vaults).where(inArray(vaults.id, createdVaultIds));
+		} finally {
+			await client.close();
+		}
+	});
+
 	it('runs the full vault and credential lifecycle over HTTP', async () => {
 		const client = createDatabaseClient({ connectionString: databaseUrl as string });
 		const container = createAegisContainer({
@@ -72,6 +91,7 @@ describe.skipIf(!databaseUrl)('HTTP boundary (real composition root + PostgreSQL
 			});
 			expect(initialized.statusCode).toBe(201);
 			const { vaultId } = initialized.json() as { vaultId: string };
+			createdVaultIds.push(vaultId);
 
 			const created = await inject(app, {
 				method: 'POST',

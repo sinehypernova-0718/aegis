@@ -418,14 +418,17 @@ export class HttpVaultClient implements VaultClient {
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ passphrase, vaultId: this.#vaultId }),
 			});
-			const result = await this.#json<{ vaultId: string; status: 'unlocked' | 'locked' }>(
-				response,
-			);
+			const result = await this.#json<{
+				vaultId: string;
+				status: 'unlocked' | 'locked';
+				recoveryKey: string;
+			}>(response);
 			this.#state = result.status;
-			// The backend issues no recovery key on creation; the interface
-			// documents that `recoveryKey` is omitted in that case and the
-			// store completes setup directly.
-			return { success: true };
+			// The backend issues the emergency recovery key EXACTLY ONCE at
+			// creation; the store gates setup completion on presenting it before
+			// the user enters the vault. It is never persisted client-side beyond
+			// this handoff.
+			return { success: true, recoveryKey: result.recoveryKey };
 		} catch (cause) {
 			if (cause instanceof VaultApiError) {
 				return { success: false, error: cause.message };
@@ -434,13 +437,54 @@ export class HttpVaultClient implements VaultClient {
 		}
 	}
 
-	async recoverVault(_recoveryKey: string): Promise<RecoverVaultResult> {
-		// Keep the explicit "not supported" seam: the backend has no recovery
-		// endpoint yet, and the store surfaces a precise message for it.
-		return {
-			success: false,
-			error: 'Emergency recovery is not supported by the active backend.',
-		};
+	async recoverVault(recoveryKey: string): Promise<RecoverVaultResult> {
+		const cleaned = recoveryKey.trim();
+		if (cleaned.length === 0) {
+			return { success: false, error: 'Recovery key is required.' };
+		}
+		if (cleaned.length > SERVER_PASSPHRASE_MAX_LENGTH) {
+			return { success: false, error: 'Recovery key is too long.' };
+		}
+		try {
+			// Same throttle posture as unlock: `retryOn401: false` because on this
+			// route a 401 is the recovery-key verdict against the backend's
+			// dedicated recovery envelope (the session cookie was already
+			// established by `#ensureSession`), and replaying a wrong key would
+			// count every failure twice against the server's unlock throttle.
+			const response = await this.#request(
+				`/vaults/${this.#vaultId}/recover`,
+				{
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ recoveryKey: cleaned }),
+				},
+				false,
+			);
+			const result = await this.#json<{ status: 'unlocked' }>(response);
+			this.#state = result.status;
+			return { success: true };
+		} catch (cause) {
+			if (cause instanceof VaultApiError) {
+				if (cause.code === 'UNAUTHENTICATED') {
+					return {
+						success: false,
+						error:
+							'Invalid recovery key. Check for typos — keys are case-sensitive and dash-grouped exactly as issued.',
+					};
+				}
+				if (cause.code === 'RATE_LIMITED') {
+					return {
+						success: false,
+						error:
+							cause.retryAfterSeconds !== null
+								? `Too many failed attempts. Try again in ${cause.retryAfterSeconds}s.`
+								: 'Too many failed attempts. Try again in a minute.',
+					};
+				}
+				return { success: false, error: cause.message };
+			}
+			this.#throwIfNetworkError(cause);
+		}
 	}
 
 	async lockVault(): Promise<void> {

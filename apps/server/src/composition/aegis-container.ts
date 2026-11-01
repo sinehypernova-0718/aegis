@@ -10,6 +10,7 @@ import {
 	InitializeVault,
 	ListCredentials,
 	LockVault,
+	RecoverVault,
 	UnlockVault,
 	UpdateCredential,
 } from '@aegis/domain';
@@ -20,11 +21,15 @@ import { createCredentialRepositoryPort } from './credential-repository-port.js'
 /** Canonical purpose for the vault's active key envelope. */
 export const PRIMARY_KEY_ENVELOPE_PURPOSE = 'primary' as const;
 
+/** Canonical purpose for the recovery-factor envelope (passphrase emergency unlock). */
+export const RECOVERY_KEY_ENVELOPE_PURPOSE = 'recovery' as const;
+
 export interface AegisContainerOptions {
 	readonly database: Database;
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
 	readonly keyEnvelopePurpose?: string;
+	readonly recoveryKeyEnvelopePurpose?: string;
 	/** Inactivity window before an unlocked vault is locked automatically. */
 	readonly idleTimeoutMs?: number;
 }
@@ -33,6 +38,7 @@ export interface AegisContainerOptions {
 export interface AegisContainer {
 	readonly initializeVault: InitializeVault;
 	readonly unlockVault: UnlockVault;
+	readonly recoverVault: RecoverVault;
 	readonly lockVault: LockVault;
 	readonly getVaultStatus: GetVaultStatus;
 	readonly createCredential: CreateCredential;
@@ -55,6 +61,8 @@ export function createAegisContainer(options: AegisContainerOptions): AegisConta
 		options.idleTimeoutMs !== undefined ? { idleTimeoutMs: options.idleTimeoutMs } : {},
 	);
 	const keyEnvelopePurpose = options.keyEnvelopePurpose ?? PRIMARY_KEY_ENVELOPE_PURPOSE;
+	const recoveryKeyEnvelopePurpose =
+		options.recoveryKeyEnvelopePurpose ?? RECOVERY_KEY_ENVELOPE_PURPOSE;
 
 	return {
 		sessionManager,
@@ -65,8 +73,15 @@ export function createAegisContainer(options: AegisContainerOptions): AegisConta
 			clock: options.clock,
 			ids: options.ids,
 			keyEnvelopePurpose,
+			recoveryKeyEnvelopePurpose,
 		}),
 		unlockVault: new UnlockVault({ vaultRepository, sessionManager, crypto, keyEnvelopePurpose }),
+		recoverVault: new RecoverVault({
+			vaultRepository,
+			sessionManager,
+			crypto,
+			recoveryKeyEnvelopePurpose,
+		}),
 		lockVault: new LockVault({ sessionManager }),
 		getVaultStatus: new GetVaultStatus({ vaultRepository, sessionManager }),
 		createCredential: new CreateCredential({

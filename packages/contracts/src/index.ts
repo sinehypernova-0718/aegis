@@ -63,6 +63,9 @@ export {
 	PASSPHRASE_MIN_LENGTH,
 	PASSPHRASE_MAX_LENGTH,
 	PassphraseSchema,
+	RECOVERY_KEY_MIN_LENGTH,
+	RECOVERY_KEY_MAX_LENGTH,
+	RecoveryKeySchema,
 	InitializeVaultRequestSchema,
 	InitializeVaultResponseSchema,
 	VaultRuntimeStateSchema,
@@ -78,6 +81,12 @@ export type {
 	UnlockVaultRequestInput,
 	UnlockVaultResponse,
 } from './vault/unlock-vault.js';
+export { RecoverVaultRequestSchema, RecoverVaultResponseSchema } from './vault/recover-vault.js';
+export type {
+	RecoverVaultRequest,
+	RecoverVaultRequestInput,
+	RecoverVaultResponse,
+} from './vault/recover-vault.js';
 export { LockVaultResponseSchema } from './vault/lock-vault.js';
 export type { LockVaultResponse } from './vault/lock-vault.js';
 export { VaultStatusSchema, VaultStatusResponseSchema } from './vault/vault-status.js';

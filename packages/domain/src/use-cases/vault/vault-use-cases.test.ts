@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { GetVaultStatus } from './get-vault-status.js';
 import { InitializeVault } from './initialize-vault.js';
 import { LockVault } from './lock-vault.js';
+import { RecoverVault } from './recover-vault.js';
 import { UnlockVault } from './unlock-vault.js';
 import {
 	InvalidKeyEnvelopeError,
@@ -26,6 +27,7 @@ import {
 } from '../../testing/fakes.js';
 
 const PURPOSE = 'primary';
+const RECOVERY_PURPOSE = 'recovery';
 
 function makeDeps() {
 	const vaultRepository = new InMemoryVaultRepository();
@@ -34,7 +36,16 @@ function makeDeps() {
 	const clock = new FixedClock();
 	const ids = new SequentialIdGenerator();
 	const keyEnvelopePurpose = PURPOSE;
-	return { vaultRepository, sessionManager, crypto, clock, ids, keyEnvelopePurpose };
+	const recoveryKeyEnvelopePurpose = RECOVERY_PURPOSE;
+	return {
+		vaultRepository,
+		sessionManager,
+		crypto,
+		clock,
+		ids,
+		keyEnvelopePurpose,
+		recoveryKeyEnvelopePurpose,
+	};
 }
 
 function initialize(deps: ReturnType<typeof makeDeps>) {
@@ -56,8 +67,32 @@ describe('InitializeVault', () => {
 		const result = await initialize(deps).execute({ passphrase: 'pw' });
 		expect(result.runtimeState).toBe('unlocked');
 		expect(deps.vaultRepository.vaults.size).toBe(1);
-		expect(deps.vaultRepository.envelopes).toHaveLength(1);
+		// One primary envelope + one recovery envelope, both from the same commit.
+		expect(deps.vaultRepository.envelopes).toHaveLength(2);
+		expect(
+			deps.vaultRepository.envelopes.map((envelope) => envelope.purpose).sort(),
+		).toEqual([PURPOSE, RECOVERY_PURPOSE].sort());
+		expect(result.recoveryKey).toBe(deps.crypto.generatedRecoveryKeys[0]);
+		expect(result.recoveryKey.startsWith('AEGIS-RCV-')).toBe(true);
+		expect(deps.crypto.createdSessions[0]?.isDisposed).toBe(false);
 		expect(deps.sessionManager.isUnlocked(result.vaultId)).toBe(true);
+	});
+
+	it('requests a recovery envelope from the crypto port', async () => {
+		const deps = makeDeps();
+		await initialize(deps).execute({ passphrase: 'pw' });
+		const recoveryEnvelope = await deps.vaultRepository.getActiveKeyEnvelope(
+			deps.crypto.createdSessions[0]?.vaultId ?? '',
+			RECOVERY_PURPOSE,
+		);
+		expect(recoveryEnvelope).not.toBeNull();
+	});
+
+	it('rejects identical primary and recovery purposes', async () => {
+		const deps = { ...makeDeps(), recoveryKeyEnvelopePurpose: PURPOSE };
+		await expect(initialize(deps).execute({ passphrase: 'pw' })).rejects.toThrow(
+			/must be different/,
+		);
 	});
 
 	it('disposes the session and does not register when persistence fails', async () => {
@@ -196,6 +231,67 @@ describe('UnlockVault', () => {
 		expect(fulfilled).toHaveLength(1);
 		expect(rejected).toHaveLength(1);
 		expect(deps.sessionManager.isUnlocked(vaultId)).toBe(true);
+	});
+});
+
+describe('RecoverVault', () => {
+	async function initializedAndLocked() {
+		const deps = makeDeps();
+		const created = await initialize(deps).execute({ passphrase: 'pw' });
+		await lock(deps).execute({ vaultId: created.vaultId });
+		return { deps, vaultId: created.vaultId, recoveryKey: created.recoveryKey };
+	}
+
+	it('unlocks from the persisted recovery envelope', async () => {
+		const { deps, vaultId, recoveryKey } = await initializedAndLocked();
+		await expect(
+			new RecoverVault(deps).execute({ vaultId, recoveryKey }),
+		).resolves.toEqual({ vaultId, status: 'unlocked' });
+		expect(deps.sessionManager.isUnlocked(vaultId)).toBe(true);
+		// Crypto unlock is indistinguishable from a passphrase unlock upstream.
+		expect(deps.crypto.unlockCount).toBe(1);
+	});
+
+	it('rejects a wrong recovery key without registering', async () => {
+		const { deps, vaultId } = await initializedAndLocked();
+		deps.crypto.behavior = 'wrong';
+		await expect(
+			new RecoverVault(deps).execute({ vaultId, recoveryKey: 'AEGIS-RCV-WRNG-KEYX' }),
+		).rejects.toBeInstanceOf(UnlockRejectedError);
+		expect(deps.sessionManager.isUnlocked(vaultId)).toBe(false);
+	});
+
+	it('rejects a vault with no recovery envelope at all', async () => {
+		const deps = makeDeps();
+		const vaultId = '00000000-0000-4000-8000-0000000000ab';
+		deps.vaultRepository.vaults.set(vaultId, {
+			id: vaultId,
+			status: 'initialized',
+			encryptionFormatVersion: 1,
+			createdAt: '2026-01-01T00:00:00.000Z',
+			updatedAt: '2026-01-01T00:00:00.000Z',
+		});
+		await expect(
+			new RecoverVault(deps).execute({ vaultId, recoveryKey: 'AEGIS-RCV-TEST-KEY-0001' }),
+		).rejects.toBeInstanceOf(InvalidKeyEnvelopeError);
+	});
+
+	it('rejects recovery on an already-unlocked vault', async () => {
+		const deps = makeDeps();
+		const { vaultId } = await initialize(deps).execute({ passphrase: 'pw' });
+		await expect(
+			new RecoverVault(deps).execute({ vaultId, recoveryKey: 'AEGIS-RCV-TEST-KEY-0001' }),
+		).rejects.toBeInstanceOf(VaultAlreadyUnlockedError);
+	});
+
+	it('rejects an unknown vault', async () => {
+		const deps = makeDeps();
+		await expect(
+			new RecoverVault(deps).execute({
+				vaultId: '00000000-0000-4000-8000-0000000000ff',
+				recoveryKey: 'AEGIS-RCV-TEST-KEY-0001',
+			}),
+		).rejects.toBeInstanceOf(VaultNotFoundError);
 	});
 });
 

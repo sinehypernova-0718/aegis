@@ -14,13 +14,20 @@ export const packageName = '@aegis/crypto' as const;
 // ---------------------------------------------------------------------------
 
 // High-level session API.
-export { createVaultSession } from './vault/create-vault-session.js';
-export type {
+export { createVaultSession } from './vault/create-vault-session.js';export type {
 	CreateVaultSessionInput,
 	CreatedVaultSession,
 } from './vault/create-vault-session.js';
 export { unlockVaultSession } from './vault/unlock-vault-session.js';
 export type { UnlockVaultSessionInput } from './vault/unlock-vault-session.js';
+
+// Recovery key material: generation/validation only — no storage, no echo APIs.
+export {
+	generateRecoveryKey,
+	validateRecoveryKey,
+	RECOVERY_KEY_PREFIX,
+} from './vault/recovery-key.js';
+export type { RecoveryKey } from './vault/recovery-key.js';
 export type {
 	DecryptRecordInput,
 	EncryptRecordInput,
