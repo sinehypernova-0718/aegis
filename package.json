@@ -45,7 +45,8 @@
     "db:check": "pnpm --filter @aegis/database db:check",
     "db:reset": "pnpm --filter @aegis/database reset",
     "db:studio": "pnpm --filter @aegis/database db:studio",
-    "start:fresh": "pnpm db:reset -- --yes && pnpm start"
+    "start:fresh": "pnpm db:reset -- --yes && pnpm start",
+    "dev:mock": "node scripts/dev-mock.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.2",
