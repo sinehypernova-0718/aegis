@@ -132,7 +132,7 @@ function resetPreferences() {
               </span>
               —
               {{ theme === 'dark'
-                ? 'Graphite and charcoal foundations with layered dark surfaces, restrained navy-blue depth, and subtle gold accents.'
+                ? 'Graphite and charcoal foundations with layered dark surfaces, extremely subtle navy undertones, and restrained gold accents.'
                 : 'Clean white and off-white surfaces with soft ice-blue primary accents, muted warm gold highlights, and blue-grey borders.'
               }}
               Theme preference is stored locally in your browser.
