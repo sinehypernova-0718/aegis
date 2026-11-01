@@ -31,6 +31,12 @@ export class SessionHandoffError extends Error {
 	/** HTTP status, or 0 when the network request itself failed. */
 	readonly status: number;
 
+	/**
+	 * Assigned at construction time; declared so `cause` is typed even under
+	 * ES2020 lib (where `Error` does not yet carry the `cause` option).
+	 */
+	declare cause?: unknown;
+
 	constructor(message: string, status: number, options?: { cause?: unknown }) {
 		super(message);
 		this.name = 'SessionHandoffError';

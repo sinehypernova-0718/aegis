@@ -1,13 +1,18 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"lib": ["ESNext", "DOM"],
+		"target": "ES2020",
+		"lib": ["ES2020", "DOM", "DOM.Iterable"],
+		"module": "ESNext",
+		"moduleResolution": "bundler",
 		"types": ["node"],
-		"rootDir": "./src",
-		"outDir": "./dist",
-		"composite": true,
-		"declaration": true,
-		"jsx": "preserve"
+		"jsx": "preserve",
+		"allowImportingTsExtensions": true,
+		"noEmit": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["src/*"]
+		}
 	},
-	"include": ["src"]
+	"include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"]
 }

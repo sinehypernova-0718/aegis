@@ -4,6 +4,7 @@ packages:
 
 allowBuilds:
   esbuild: true
+  vue-demi: true
 
 # Dependency resolution
 preferWorkspacePackages: true
@@ -19,3 +20,4 @@ autoInstallPeers: true
 
 onlyBuiltDependencies:
   - esbuild
+  - vue-demi
