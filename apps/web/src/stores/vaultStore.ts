@@ -129,6 +129,10 @@ export const useVaultStore = defineStore('vault', () => {
 
 		pendingInitPromise = (async () => {
 			try {
+				// No explicit session handoff here: the real vault client owns the
+				// handoff lifecycle and guarantees `store.init()` (App startup)
+				// begins with a valid HttpOnly session cookie before its first
+				// status query. Injected test/mock clients are unaffected.
 				const s = await activeClient.getVaultStatus();
 				status.value = s;
 			} catch {
