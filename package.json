@@ -43,7 +43,9 @@
     "db:generate": "pnpm --filter @aegis/database db:generate",
     "db:migrate": "pnpm --filter @aegis/database db:migrate",
     "db:check": "pnpm --filter @aegis/database db:check",
-    "db:studio": "pnpm --filter @aegis/database db:studio"
+    "db:reset": "pnpm --filter @aegis/database reset",
+    "db:studio": "pnpm --filter @aegis/database db:studio",
+    "start:fresh": "pnpm db:reset -- --yes && pnpm start"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.2",
