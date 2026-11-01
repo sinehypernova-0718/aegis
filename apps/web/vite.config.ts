@@ -29,12 +29,20 @@ export default defineConfig({
 		 * `127.0.0.1:7787`: the browser still sees a single origin, the HttpOnly
 		 * cookie is set (and sent) against the Vite origin, and no cross-origin
 		 * request ever carries the credential.
+		 *
+		 * `changeOrigin: true` satisfies the backend's loopback Host check
+		 * (`apps/server/src/http/security.ts`), and the rewritten `Origin`
+		 * satisfies its exact-match origin allow-list without requiring
+		 * AEGIS_ALLOWED_ORIGINS to be exported in dev. Note the backend serves
+		 * only /auth/session, /vaults/... and health probes — the remaining UI
+		 * routes are Vite's own.
 		 */
 		proxy: {
-			'/auth/session': 'http://127.0.0.1:7787',
-			'/vaults': 'http://127.0.0.1:7787',
-			'/healthz': 'http://127.0.0.1:7787',
-			'/readyz': 'http://127.0.0.1:7787',
+			'^/(auth/session|vaults|healthz|readyz)': {
+				target: 'http://127.0.0.1:7787',
+				changeOrigin: true,
+				headers: { origin: 'http://127.0.0.1:7787' },
+			},
 		},
 	},
 });

@@ -364,11 +364,19 @@ export class HttpVaultClient implements VaultClient {
 			return { success: false, error: 'Passphrase is too long.' };
 		}
 		try {
-			const response = await this.#request(`/vaults/${this.#vaultId}/unlock`, {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ passphrase }),
-			});
+			// `retryOn401: false` is deliberate: on this route a 401 is the
+			// passphrase verdict (the session cookie was already established by
+			// `#ensureSession`), and replaying the wrong passphrase would count
+			// every failure twice against the server's unlock throttle.
+			const response = await this.#request(
+				`/vaults/${this.#vaultId}/unlock`,
+				{
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({ passphrase }),
+				},
+				false,
+			);
 			const result = await this.#json<{ status: 'unlocked' }>(response);
 			this.#state = result.status;
 			return { success: true };
