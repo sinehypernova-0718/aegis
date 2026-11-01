@@ -84,89 +84,90 @@
 }
 
 /* ==========================================================================
-   DARK THEME — Midnight Blue / Deep Navy
+   DARK THEME — Midnight / Graphite with restrained gold
    ========================================================================== */
 [data-theme="dark"] {
 	color-scheme: dark;
 
-	/* Palette */
-	--a-navy-950: #050a18;
-	--a-navy-900: #081026;
-	--a-navy-800: #0c1838;
-	--a-navy-700: #12224a;
-	--a-navy-600: #1a2f63;
-	--a-blue-400: #6aa5ff;
-	--a-blue-300: #9cc4ff;
-	--a-blue-500: #3e7fe0;
-	--a-gold-500: #d9b36a;
-	--a-gold-300: #ecd3a2;
-	--a-ice: #dbe8ff;
+	/* Palette — graphite / charcoal with a subtle navy depth undertone */
+	--a-graphite-950: #0B0C0E;
+	--a-graphite-900: #111316;
+	--a-graphite-850: #14171B;
+	--a-charcoal-800: #171A1E;
+	--a-charcoal-750: #1C1F24;
+	--a-charcoal-700: #20242A;
+	--a-charcoal-650: #252A30;
+	--a-navy-undertone: #10161F;
+	--a-gold-500: #D6B36A;
+	--a-gold-300: #E8CD91;
+	--a-gold-700: #B58E45;
 
 	/* Surfaces */
-	--surface-base: var(--a-navy-950);
-	--surface-primary: var(--a-navy-900);
-	--surface-secondary: var(--a-navy-800);
-	--surface-tertiary: var(--a-navy-700);
-	--surface-elevated: #14213f;
-	--surface-overlay: rgba(8, 16, 38, 0.82);
-	--surface-input: rgba(18, 34, 74, 0.55);
+	--surface-base: var(--a-graphite-950);
+	--surface-primary: var(--a-graphite-900);
+	--surface-secondary: var(--a-charcoal-800);
+	--surface-tertiary: var(--a-charcoal-700);
+	--surface-elevated: var(--a-charcoal-650);
+	--surface-overlay: rgba(11, 12, 14, 0.82);
+	--surface-input: rgba(32, 36, 42, 0.6);
 
 	/* Text */
-	--text-primary: #eef4ff;
-	--text-secondary: #b7c8e4;
-	--text-tertiary: #7d92b8;
-	--text-disabled: #55688a;
-	--text-inverse: #081026;
-	--text-on-accent: #061024;
+	--text-primary: #F1F0EC;
+	--text-secondary: #B8B7B0;
+	--text-tertiary: #858780;
+	--text-disabled: #5C5F5A;
+	--text-inverse: #0B0C0E;
+	--text-on-accent: #0B0C0E;
+	--text-on-gold: #0B0C0E;
 
-	/* Borders */
-	--border-subtle: rgba(106, 165, 255, 0.12);
-	--border-default: rgba(106, 165, 255, 0.22);
-	--border-strong: rgba(156, 196, 255, 0.38);
-	--border-focus: var(--a-blue-400);
-	--border-highlight: rgba(219, 232, 255, 0.14); /* inner top highlight on glass */
+	/* Borders — neutral graphite */
+	--border-subtle: rgba(255, 255, 255, 0.06);
+	--border-default: rgba(255, 255, 255, 0.10);
+	--border-strong: rgba(255, 255, 255, 0.18);
+	--border-focus: var(--a-gold-500);
+	--border-highlight: rgba(255, 255, 255, 0.06);
 
-	/* Accent — cool blue lighting */
-	--accent-primary: var(--a-blue-400);
-	--accent-hover: var(--a-blue-300);
-	--accent-active: var(--a-blue-500);
-	--accent-muted: rgba(106, 165, 255, 0.14);
-	--accent-border: rgba(106, 165, 255, 0.35);
-	--accent-glow: rgba(106, 165, 255, 0.22);
+	/* Accent — golden interactive accent */
+	--accent-primary: var(--a-gold-500);
+	--accent-hover: var(--a-gold-300);
+	--accent-active: var(--a-gold-700);
+	--accent-muted: rgba(214, 179, 106, 0.12);
+	--accent-border: rgba(214, 179, 106, 0.34);
+	--accent-glow: rgba(214, 179, 106, 0.22);
 
 	/* Golden highlights & surfaces */
 	--gold: var(--a-gold-500);
 	--gold-bright: var(--a-gold-300);
-	--gold-muted: rgba(217, 179, 106, 0.12);
-	--gold-border: rgba(217, 179, 106, 0.34);
-	--gold-border-focus: rgba(236, 211, 162, 0.75);
-	--gold-surface: rgba(217, 179, 106, 0.07);
-	--gold-glow: rgba(217, 179, 106, 0.22);
-	--gradient-gold: linear-gradient(135deg, #e5c382 0%, #d9b36a 50%, #b98f3e 100%);
-	--gradient-gold-hover: linear-gradient(135deg, #ecd3a2 0%, #e5c382 50%, #c49944 100%);
+	--gold-muted: rgba(214, 179, 106, 0.12);
+	--gold-border: rgba(214, 179, 106, 0.34);
+	--gold-border-focus: rgba(232, 205, 145, 0.75);
+	--gold-surface: rgba(214, 179, 106, 0.07);
+	--gold-glow: rgba(214, 179, 106, 0.22);
+	--gradient-gold: linear-gradient(135deg, #E8CD91 0%, #D6B36A 50%, #B58E45 100%);
+	--gradient-gold-hover: linear-gradient(135deg, #F0DDB2 0%, #E8CD91 50%, #C49A53 100%);
 	--gradient-gold-subtle: linear-gradient(
 		135deg,
-		rgba(217, 179, 106, 0.16) 0%,
-		rgba(217, 179, 106, 0.04) 100%
+		rgba(214, 179, 106, 0.16) 0%,
+		rgba(214, 179, 106, 0.04) 100%
 	);
-	--text-on-gold: #081026;
-	--specular-rim: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
-	--specular-rim-subtle: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
-	--specular-rim-gold: inset 0 1px 0 0 rgba(255, 245, 215, 0.45);
+	--text-on-gold: #0B0C0E;
+	--specular-rim: inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
+	--specular-rim-subtle: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+	--specular-rim-gold: inset 0 1px 0 0 rgba(255, 245, 215, 0.35);
 
-	/* Glass system */
-	--glass-bg: rgba(18, 34, 74, 0.55);
-	--glass-bg-subtle: rgba(18, 34, 74, 0.34);
-	--glass-bg-elevated: rgba(26, 47, 99, 0.62);
-	--glass-bg-modal: rgba(12, 24, 56, 0.78);
-	--glass-opacity: 0.55;
-	--glass-border: rgba(156, 196, 255, 0.18);
-	--glass-border-strong: rgba(156, 196, 255, 0.32);
-	--glass-highlight: linear-gradient(150deg, rgba(219, 232, 255, 0.14), rgba(219, 232, 255, 0) 42%);
-	--glass-tint-cool: rgba(106, 165, 255, 0.08);
+	/* Glass system — graphite translucent */
+	--glass-bg: rgba(17, 19, 22, 0.58);
+	--glass-bg-subtle: rgba(17, 19, 22, 0.36);
+	--glass-bg-elevated: rgba(32, 36, 42, 0.62);
+	--glass-bg-modal: rgba(11, 12, 14, 0.80);
+	--glass-opacity: 0.58;
+	--glass-border: rgba(255, 255, 255, 0.08);
+	--glass-border-strong: rgba(255, 255, 255, 0.16);
+	--glass-highlight: linear-gradient(150deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%);
+	--glass-tint-cool: rgba(255, 255, 255, 0.02);
 
-	/* Shadows */
-	--shadow-color: 222 60% 3%;
+	/* Shadows — neutral black */
+	--shadow-color: 0 0% 0%;
 	--shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.5);
 	--shadow-sm:
 		0 2px 6px -1px hsl(var(--shadow-color) / 0.55), 0 1px 2px hsl(var(--shadow-color) / 0.4);
@@ -179,22 +180,22 @@
 		0 28px 70px -20px hsl(var(--shadow-color) / 0.75),
 		0 10px 24px -10px hsl(var(--shadow-color) / 0.55);
 	--shadow-modal:
-		0 40px 90px -24px hsl(var(--shadow-color) / 0.8), 0 0 0 1px rgba(156, 196, 255, 0.12);
+		0 40px 90px -24px hsl(var(--shadow-color) / 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06);
 	--shadow-accent: 0 0 24px -6px var(--accent-glow);
 	--shadow-gold: 0 0 20px -6px var(--gold-glow);
-	--shadow-gold-elevated: 0 4px 16px -2px rgba(217, 179, 106, 0.32), 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+	--shadow-gold-elevated: 0 4px 16px -2px rgba(214, 179, 106, 0.28), 0 1px 3px 0 rgba(0, 0, 0, 0.6);
 
-	/* Focus ring */
+	/* Focus ring — golden */
 	--focus-ring: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--accent-primary);
-	--focus-ring-glow: 0 0 0 4px rgba(106, 165, 255, 0.35);
+	--focus-ring-glow: 0 0 0 4px rgba(214, 179, 106, 0.32);
 
-	/* Gradients */
+	/* Gradients — graphite with subtle navy undertone and gold whispers */
 	--gradient-app:
-		radial-gradient(120% 90% at 18% -8%, rgba(26, 47, 99, 0.9) 0%, transparent 55%),
-		radial-gradient(110% 80% at 88% 108%, rgba(18, 34, 74, 0.85) 0%, transparent 60%),
-		linear-gradient(180deg, var(--a-navy-900) 0%, var(--a-navy-950) 100%);
-	--gradient-sheen: linear-gradient(120deg, rgba(219, 232, 255, 0.06), transparent 38%);
-	--gradient-accent: linear-gradient(135deg, var(--a-blue-500), var(--a-blue-400));
+		radial-gradient(120% 90% at 18% -8%, rgba(32, 36, 42, 0.9) 0%, transparent 55%),
+		radial-gradient(110% 80% at 88% 108%, rgba(23, 26, 30, 0.85) 0%, transparent 60%),
+		linear-gradient(180deg, #20242A 0%, #0B0C0E 100%);
+	--gradient-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.04), transparent 38%);
+	--gradient-accent: linear-gradient(135deg, var(--a-gold-700), var(--a-gold-500));
 	--gradient-gold-hairline: linear-gradient(
 		90deg,
 		transparent,
@@ -203,19 +204,19 @@
 		var(--gold-border) 78%,
 		transparent
 	);
-	--aurora-1: rgba(62, 127, 224, 0.28);
-	--aurora-2: rgba(106, 165, 255, 0.16);
-	--aurora-3: rgba(217, 179, 106, 0.08);
+	--aurora-1: rgba(214, 179, 106, 0.10);
+	--aurora-2: rgba(255, 255, 255, 0.04);
+	--aurora-3: rgba(20, 28, 40, 0.22);
 
-	/* Semantic status */
+	/* Semantic status — info retains blue as intentional informational accent */
 	--success: #4ade80;
 	--success-muted: rgba(74, 222, 128, 0.12);
 	--warning: #fbbf24;
 	--warning-muted: rgba(251, 191, 36, 0.12);
 	--danger: #f87171;
 	--danger-muted: rgba(248, 113, 113, 0.12);
-	--info: var(--a-blue-400);
-	--info-muted: var(--accent-muted);
+	--info: #6aa5ff;
+	--info-muted: rgba(106, 165, 255, 0.12);
 
 	/* Credential-type accents (contract-visible vocabulary) */
 	--type-password: #8ea8ff;
@@ -224,10 +225,9 @@
 	--type-ssh-key: #4ade80;
 
 	/* Scrollbar / selection */
-	--scrollbar-thumb: rgba(106, 165, 255, 0.22);
-	--scrollbar-thumb-hover: rgba(106, 165, 255, 0.4);
+	--scrollbar-thumb: rgba(255, 255, 255, 0.14);
+	--scrollbar-thumb-hover: rgba(214, 179, 106, 0.32);
 }
-
 /* ==========================================================================
    LIGHT THEME — Soft White / Pale Blue with restrained gold
    ========================================================================== */
