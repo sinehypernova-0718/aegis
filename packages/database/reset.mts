@@ -1,9 +1,9 @@
+import { dirname, resolve } from 'node:path';
+import { stdin as input, stdout as output } from 'node:process';
+import { createInterface } from 'node:readline/promises';
+import { fileURLToPath } from 'node:url';
 import { config as loadDotenv } from 'dotenv';
 import { Client } from 'pg';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createInterface } from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
 
 const here = dirname(fileURLToPath(import.meta.url));
 loadDotenv({ path: resolve(here, '../../.env') });
@@ -37,7 +37,7 @@ try {
 	await client.query(
 		'TRUNCATE TABLE "vault_records", "vault_key_envelopes", "vaults" RESTART IDENTITY CASCADE',
 	);
-	console.log('✔ All data cleared. Tables are empty but migrations/schema are intact.');
+	console.log('All data cleared. Tables and schema are intact.');
 } finally {
 	await client.end();
 }
