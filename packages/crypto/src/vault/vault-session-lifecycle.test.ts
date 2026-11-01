@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { createVaultSession } from './create-vault-session.js';
+import {
+	RECOVERY_KEY_PREFIX,
+	generateRecoveryKey,
+	validateRecoveryKey,
+} from './recovery-key.js';
 import { unlockVaultSession } from './unlock-vault-session.js';
 import { validateVaultKeyEnvelope } from '../envelope/validate-envelope.js';
 import {
@@ -75,5 +80,87 @@ describe('vault session lifecycle (create + unlock)', () => {
 		await expect(createVaultSession({ vaultId: VAULT_ID, passphrase: '' })).rejects.toBeInstanceOf(
 			MalformedInputError,
 		);
+	});
+});
+
+describe('recovery envelope (second wrapping of the same DEK)', () => {
+	it('produces an independent recovery envelope that unlocks the same vault', async () => {
+		const recoveryKey = generateRecoveryKey();
+		const { envelope, recoveryEnvelope, session } = await createVaultSession({
+			vaultId: VAULT_ID,
+			passphrase: 'correct horse battery staple',
+			recoveryKey,
+		});
+		expect(recoveryEnvelope).toBeDefined();
+		if (!recoveryEnvelope) return;
+		// The recovery envelope must differ (own salt, own wrap) from the primary.
+		expect(recoveryEnvelope).not.toEqual(envelope);
+		expect(validateVaultKeyEnvelope(recoveryEnvelope)).toEqual(recoveryEnvelope);
+
+		const enc = session.encryptRecord({ recordId: RECORD_ID, plaintext: encoder.encode('secret') });
+		session.dispose();
+
+		// Recovery unlock (no passphrase involvement) must decrypt the record.
+		const recovered = await unlockVaultSession({
+			vaultId: VAULT_ID,
+			passphrase: recoveryKey,
+			envelope: recoveryEnvelope,
+		});
+		const out = recovered.decryptRecord({
+			recordId: RECORD_ID,
+			encryptionVersion: enc.encryptionVersion,
+			nonce: enc.nonce,
+			ciphertext: enc.ciphertext,
+		});
+		expect(decoder.decode(out)).toBe('secret');
+	});
+
+	it('rejects a wrong recovery key with the dedicated envelope', async () => {
+		const { recoveryEnvelope } = await createVaultSession({
+			vaultId: VAULT_ID,
+			passphrase: 'pw',
+			recoveryKey: generateRecoveryKey(),
+		});
+		await expect(
+			unlockVaultSession({
+				vaultId: VAULT_ID,
+				passphrase: generateRecoveryKey(), // right format, wrong KEK
+				envelope: recoveryEnvelope,
+			}),
+		).rejects.toBeInstanceOf(AuthenticationError);
+	});
+
+	it('never produces a recovery envelope when no recovery key was supplied', async () => {
+		const { recoveryEnvelope } = await createVaultSession({ vaultId: VAULT_ID, passphrase: 'pw' });
+		expect(recoveryEnvelope).toBeUndefined();
+	});
+
+	it('rejects an empty recovery key', async () => {
+		await expect(
+			createVaultSession({ vaultId: VAULT_ID, passphrase: 'pw', recoveryKey: '' }),
+		).rejects.toBeInstanceOf(MalformedInputError);
+	});
+
+	it('generates valid, unique, correctly formatted recovery keys', () => {
+		const seen = new Set<string>();
+		for (let index = 0; index < 32; index++) {
+			const key = generateRecoveryKey();
+			expect(key.startsWith(RECOVERY_KEY_PREFIX + '-')).toBe(true);
+			expect(key).toMatch(/^(AEGIS-RCV-[A-Z2-7]{4}){1}(-[A-Z2-7]{4}){7}$/);
+			// Validator round-trips the canonical form.
+			expect(validateRecoveryKey(key)).toBe(key);
+			// Retyping variants normalise to the canonical form.
+			expect(validateRecoveryKey(key.toLowerCase().replaceAll('-', ' '))).toBe(key);
+			expect(seen.has(key)).toBe(false);
+			seen.add(key);
+		}
+	});
+
+	it('rejects malformed recovery keys', () => {
+		expect(() => validateRecoveryKey('')).toThrow(MalformedInputError);
+		expect(() => validateRecoveryKey('AEGIS-RCV-1M2W-K4XQ-P2ZF-9QMD-3TVR-H8BC-6LWD')).toThrow(
+			MalformedInputError,
+		); // '1' is not in the base32 alphabet
+		expect(() => validateRecoveryKey('AEGIS-RCV-7M2W-K4XQ')).toThrow(MalformedInputError);
 	});
 });

@@ -18,6 +18,8 @@ export const TEST_CORRECT_PASSPHRASE = 'correct horse battery staple';
 export const TEST_SECRET_MARKER = 'TEST_SECRET_MARKER_7c91';
 export const TEST_NOTE_MARKER = 'TEST_PRIVATE_NOTE_MARKER_4d28';
 export const TEST_WRONG_PASSPHRASE = 'wrong passphrase';
+/** Recovery key accepted by the fake `RecoverVault`. */
+export const TEST_RECOVERY_KEY = 'AEGIS-RCV-TEST-KEY-00000001';
 
 const CREATED_AT = '2026-01-01T00:00:00.000Z';
 const UPDATED_AT = '2026-01-02T00:00:00.000Z';
@@ -32,6 +34,7 @@ export interface FakeContainerState {
 	readonly calls: {
 		initialize: number;
 		unlock: number;
+		recover: number;
 		lock: number;
 		status: number;
 		create: number;
@@ -74,6 +77,7 @@ export function createFakeContainer(): FakeContainer {
 		calls: {
 			initialize: 0,
 			unlock: 0,
+			recover: 0,
 			lock: 0,
 			status: 0,
 			create: 0,
@@ -90,13 +94,25 @@ export function createFakeContainer(): FakeContainer {
 				state.calls.initialize += 1;
 				state.vaultId = input.vaultId ?? TEST_VAULT_ID;
 				state.unlocked = true;
-				return { vaultId: state.vaultId, runtimeState: 'unlocked' };
+				return { vaultId: state.vaultId, runtimeState: 'unlocked', recoveryKey: TEST_RECOVERY_KEY };
 			},
 		},
 		unlockVault: {
 			async execute(input) {
 				state.calls.unlock += 1;
 				if (input.passphrase !== TEST_CORRECT_PASSPHRASE) {
+					throw new UnlockRejectedError();
+				}
+				const vaultId = state.vaultId ?? input.vaultId;
+				state.vaultId = vaultId;
+				state.unlocked = true;
+				return { vaultId, status: 'unlocked' };
+			},
+		},
+		recoverVault: {
+			async execute(input) {
+				state.calls.recover += 1;
+				if (input.recoveryKey.trim() !== TEST_RECOVERY_KEY) {
 					throw new UnlockRejectedError();
 				}
 				const vaultId = state.vaultId ?? input.vaultId;

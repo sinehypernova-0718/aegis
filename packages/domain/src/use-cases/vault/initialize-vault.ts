@@ -1,6 +1,7 @@
 import type { VaultSession } from '@aegis/crypto';
 
 import {
+	InvalidKeyEnvelopeError,
 	InvalidVaultInputError,
 	PersistenceError,
 	VaultAlreadyInitializedError,
@@ -31,6 +32,8 @@ export interface InitializeVaultDeps {
 	readonly clock: Clock;
 	readonly ids: IdGenerator;
 	readonly keyEnvelopePurpose: string;
+	/** Purpose of the recovery-factor envelope persisted alongside the primary one. */
+	readonly recoveryKeyEnvelopePurpose: string;
 }
 
 export interface InitializeVaultInput {
@@ -41,6 +44,12 @@ export interface InitializeVaultInput {
 export interface InitializeVaultResult {
 	readonly vaultId: string;
 	readonly runtimeState: 'unlocked' | 'locked';
+	/**
+	 * Emergency recovery key, generated here and returned EXACTLY ONCE. It must
+	 * be presented to the user before setup completes; the backend stores no
+	 * readable copy of it, only the DEK wrapped under its derived KEK.
+	 */
+	readonly recoveryKey: string;
 }
 
 /**
@@ -69,8 +78,24 @@ export class InitializeVault {
 		if (typeof vaultId !== 'string' || vaultId.length === 0) {
 			throw new InvalidVaultInputError('vaultId must be a non-empty string');
 		}
+		if (this.#deps.recoveryKeyEnvelopePurpose === this.#deps.keyEnvelopePurpose) {
+			throw new InvalidVaultInputError(
+				'primary and recovery envelope purposes must be different strings',
+			);
+		}
 
-		const created = await this.#deps.crypto.createVaultSession({ vaultId, passphrase });
+		const recoveryKey = this.#deps.crypto.generateRecoveryKey();
+		const created = await this.#deps.crypto.createVaultSession({
+			vaultId,
+			passphrase,
+			recoveryKey,
+		});
+		if (created.recoveryEnvelope === undefined) {
+			// Contract violation by the crypto adapter: without the recovery
+			// envelope the returned key could never unlock the vault.
+			disposeQuietly(created.session);
+			throw new InvalidKeyEnvelopeError('crypto adapter did not produce the recovery envelope');
+		}
 		// Ownership of the session transfers to the manager only after a successful
 		// registration. Until then, every exit path — including failures while
 		// generating timestamps, persisting, or registering — disposes it.
@@ -94,6 +119,14 @@ export class InitializeVault {
 							purpose: this.#deps.keyEnvelopePurpose,
 							envelopeVersion: created.envelope.version,
 							envelope: created.envelope,
+							createdAt: now,
+						},
+						{
+							id: this.#deps.ids.generate(),
+							vaultId,
+							purpose: this.#deps.recoveryKeyEnvelopePurpose,
+							envelopeVersion: created.recoveryEnvelope.version,
+							envelope: created.recoveryEnvelope,
 							createdAt: now,
 						},
 					],
@@ -120,6 +153,7 @@ export class InitializeVault {
 		return {
 			vaultId,
 			runtimeState: ownershipTransferred ? 'unlocked' : 'locked',
+			recoveryKey,
 		};
 	}
 }

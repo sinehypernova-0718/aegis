@@ -26,6 +26,7 @@ import {
 } from '../../testing/fakes.js';
 
 const PURPOSE = 'primary';
+const RECOVERY_PURPOSE = 'recovery';
 
 const credential = {
 	type: 'password' as const,
@@ -42,6 +43,7 @@ async function setup() {
 	const clock = new FixedClock();
 	const ids = new SequentialIdGenerator();
 	const keyEnvelopePurpose = PURPOSE;
+	const recoveryKeyEnvelopePurpose = RECOVERY_PURPOSE;
 	const { vaultId } = await new InitializeVault({
 		vaultRepository,
 		sessionManager,
@@ -49,6 +51,7 @@ async function setup() {
 		clock,
 		ids,
 		keyEnvelopePurpose,
+		recoveryKeyEnvelopePurpose,
 	}).execute({ passphrase: 'pw' });
 
 	const credentialRepository = new InMemoryCredentialRepository();
@@ -165,6 +168,7 @@ describe('credential use cases', () => {
 			clock: s.clock,
 			ids: s.ids,
 			keyEnvelopePurpose: PURPOSE,
+			recoveryKeyEnvelopePurpose: RECOVERY_PURPOSE,
 		}).execute({ passphrase: 'pw', vaultId: otherVaultId });
 
 		await expect(s.get.execute({ vaultId: otherVaultId, id: created.id })).rejects.toBeInstanceOf(

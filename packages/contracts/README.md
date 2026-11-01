@@ -203,7 +203,12 @@ States:
 
 ### Security boundary
 
-The API **must not** return the unwrapped DEK, KEK, master password, or recovery secret. The recovery flow must be designed around the actual cryptographic architecture — not a generic `recoveryKey: string` field added without thought.
+The API **must not** return the unwrapped DEK, KEK, or master password. The
+recovery key issued at creation IS returned exactly once (in
+`POST /vaults`'s response) because the user must record it at that moment —
+it cannot be re-issued later. The recovery flow is modelled around the
+cryptography: the key unlocks a dedicated recovery envelope (see below), not
+a magic string compared in application code.
 
 ### Crypto as source of truth
 
@@ -220,7 +225,12 @@ Contracts may validate a **suitable transport representation** of this envelope 
 // crypto:   validateVaultKeyEnvelope(...) performs real verification
 ```
 
-Recovery is not a string field: it is modelled as an additional recovery envelope produced by the crypto package (e.g. a second wrapping of the same DEK under a recovery-derived key), validated at the boundary and verified by `@aegis/crypto`.
+Recovery is modelled as an additional recovery envelope produced by the crypto
+package — a second wrapping of the same DEK under a KEK derived (own salt +
+params) from a high-entropy generated recovery key. The key is presented to the
+user once in the initialize response and never stored readable; recovery
+(`POST /vaults/:id/recover`) re-derives the KEK and verifies the unwrap
+server-side, exactly like a passphrase unlock.
 
 ## 6. Credential contracts
 

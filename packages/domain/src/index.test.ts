@@ -10,6 +10,7 @@ describe('@aegis/domain', () => {
 	it('exposes the intended public surface', () => {
 		for (const name of [
 			'InitializeVault',
+			'RecoverVault',
 			'UnlockVault',
 			'LockVault',
 			'GetVaultStatus',

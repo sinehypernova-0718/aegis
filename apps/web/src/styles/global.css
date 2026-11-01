@@ -1,0 +1,411 @@
+@import "tailwindcss";
+@import "./fonts.css";
+@import "./tokens.css";
+
+/* Base Reset
+   MUST live in `@layer base`. Tailwind v4 emits its utilities inside
+   `@layer utilities`, and unlayered rules always beat layered ones — so an
+   unlayered `margin: 0` reset would silently override every `mb-*`/`mt-*`/
+   `space-y-*` utility and collapse all vertical rhythm to 0px. */
+@layer base {
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+	}
+
+	html {
+		font-family: var(--font-body);
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+		text-rendering: optimizeLegibility;
+	}
+
+	body {
+		background-color: var(--surface-base);
+		color: var(--text-primary);
+		line-height: 1.55;
+		transition:
+			background-color var(--duration-component) var(--ease-in-out),
+			color var(--duration-component) var(--ease-in-out);
+	}
+}
+
+/* Root mount point must fill the viewport so the h-full chain in
+   App.vue (and every feature view) resolves against real height.
+   Kept unlayered so no utility can collapse it. */
+#app {
+	height: 100%;
+	min-height: 100%;
+}
+
+/* ==========================================================================
+   Typography scale classes — one definition per register (token-driven).
+   Components use these instead of ad-hoc text-[Npx] values.
+   ========================================================================== */
+.a-display {
+	font: var(--text-display);
+	letter-spacing: var(--tracking-display);
+	color: var(--text-primary);
+}
+.a-title {
+	font: var(--text-title);
+	letter-spacing: var(--tracking-display);
+	color: var(--text-primary);
+}
+.a-heading {
+	font: var(--text-heading);
+	letter-spacing: -0.005em;
+	color: var(--text-primary);
+}
+.a-subheading {
+	font: var(--text-subheading);
+	color: var(--text-primary);
+}
+.a-body {
+	font: var(--text-body);
+	color: var(--text-secondary);
+}
+.a-supporting {
+	font: var(--text-supporting);
+	color: var(--text-secondary);
+}
+.a-label {
+	font: var(--text-label);
+	letter-spacing: var(--tracking-label);
+	color: var(--text-tertiary);
+	text-transform: uppercase;
+}
+.a-meta {
+	font: var(--text-meta);
+	color: var(--text-tertiary);
+}
+.a-mono {
+	font: var(--text-mono);
+	color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Ambient atmosphere — cinematic backdrop.
+   Fixed, pointer-events-none, GPU-cheap: two large blurred radial washes
+   behind everything. Rendered once at the app root, never per surface.
+   ========================================================================== */
+.a-aurora {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.a-aurora__blob {
+	position: absolute;
+	border-radius: var(--radius-full);
+	filter: blur(var(--blur-xl));
+	will-change: transform;
+}
+
+.a-aurora__blob--1 {
+	width: 46rem;
+	height: 46rem;
+	top: -18rem;
+	left: -12rem;
+	background: radial-gradient(circle, var(--aurora-1) 0%, transparent 70%);
+}
+
+.a-aurora__blob--2 {
+	width: 38rem;
+	height: 38rem;
+	bottom: -14rem;
+	right: -10rem;
+	background: radial-gradient(circle, var(--aurora-2) 0%, transparent 70%);
+}
+
+.a-aurora__blob--3 {
+	width: 24rem;
+	height: 24rem;
+	top: 34%;
+	right: 22%;
+	background: radial-gradient(circle, var(--aurora-3) 0%, transparent 70%);
+	opacity: 0.7;
+}
+
+/* Slow drift is intentionally subtle; disabled under reduced motion below. */
+@media (prefers-reduced-motion: no-preference) {
+	.a-aurora__blob--1 {
+		animation: a-drift-a 46s var(--ease-in-out) infinite alternate;
+	}
+	.a-aurora__blob--2 {
+		animation: a-drift-b 58s var(--ease-in-out) infinite alternate;
+	}
+}
+
+@keyframes a-drift-a {
+	from {
+		transform: translate3d(0, 0, 0);
+	}
+	to {
+		transform: translate3d(4rem, 3rem, 0);
+	}
+}
+
+@keyframes a-drift-b {
+	from {
+		transform: translate3d(0, 0, 0);
+	}
+	to {
+		transform: translate3d(-3rem, -4rem, 0);
+	}
+}
+
+/* ==========================================================================
+   Glass primitives (CSS layer backing GlassPanel.vue)
+   Depth tiers share: background tint, blur, border, inner highlight, shadow.
+   ========================================================================== */
+.a-glass {
+	position: relative;
+	isolation: isolate;
+	border-radius: var(--radius-lg);
+	border: 1px solid var(--glass-border);
+	backdrop-filter: blur(var(--blur-md)) saturate(1.35);
+	-webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.35);
+	box-shadow: var(--specular-rim), var(--shadow-md);
+}
+
+/* Top-edge light catch. Pseudo-element keeps the panel's own background
+   clean and lets radius clipping stay simple. */
+.a-glass::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background: var(--glass-highlight);
+	pointer-events: none;
+	z-index: -1;
+}
+
+.a-glass--subtle {
+	background: var(--glass-bg-subtle);
+	backdrop-filter: blur(var(--blur-xs)) saturate(1.2);
+	-webkit-backdrop-filter: blur(var(--blur-xs)) saturate(1.2);
+	box-shadow: var(--specular-rim-subtle), var(--shadow-xs);
+}
+
+.a-glass--standard {
+	background: var(--glass-bg);
+	box-shadow: var(--specular-rim), var(--shadow-sm);
+}
+
+.a-glass--elevated {
+	background: var(--glass-bg-elevated);
+	backdrop-filter: blur(var(--blur-lg)) saturate(1.4);
+	-webkit-backdrop-filter: blur(var(--blur-lg)) saturate(1.4);
+	border-color: var(--glass-border-strong);
+	box-shadow: var(--specular-rim), var(--shadow-lg);
+}
+
+.a-glass--modal {
+	background: var(--glass-bg-modal);
+	backdrop-filter: blur(var(--blur-xl)) saturate(1.5);
+	-webkit-backdrop-filter: blur(var(--blur-xl)) saturate(1.5);
+	border-color: var(--glass-border-strong);
+	box-shadow: var(--specular-rim), var(--shadow-modal);
+}
+
+.a-glass--focused {
+	border-color: var(--accent-border);
+	box-shadow: var(--specular-rim), var(--shadow-lg), var(--shadow-accent);
+}
+
+/* Float tier — detached, cloud-like surfaces (select/date popovers, menus).
+   Deep frosted blur with a wide, layered diffuse shadow reads as suspended
+   in air rather than resting on a surface. */
+.a-glass--float {
+	background: var(--glass-bg-elevated);
+	backdrop-filter: blur(var(--blur-xl)) saturate(1.45);
+	-webkit-backdrop-filter: blur(var(--blur-xl)) saturate(1.45);
+	border-color: var(--glass-border-strong);
+	box-shadow: var(--specular-rim), var(--shadow-lg), var(--shadow-xl);
+}
+
+/* Golden variant — reserved for premium highlights (never default chrome). */
+.a-glass--gold {
+	background: var(--gold-surface);
+	border-color: var(--gold-border);
+	box-shadow: var(--specular-rim-gold), var(--shadow-md), var(--shadow-gold);
+}
+
+/* Interactive elevation for cards and actionable surfaces */
+.a-glass--interactive {
+	transition:
+		transform var(--duration-control) var(--ease-out),
+		box-shadow var(--duration-control) var(--ease-out),
+		border-color var(--duration-control) var(--ease-out);
+}
+.a-glass--interactive:hover {
+	transform: translateY(-2px);
+	border-color: var(--border-default);
+	box-shadow: var(--specular-rim), var(--shadow-md);
+}
+.a-glass--interactive.a-glass--gold:hover {
+	border-color: var(--gold);
+	box-shadow: var(--specular-rim-gold), var(--shadow-lg), var(--shadow-gold-elevated);
+}
+
+/* Gold hairline divider/accent rule. */
+.a-gold-hairline {
+	height: 1px;
+	border: 0;
+	background: var(--gradient-gold-hairline);
+	opacity: 0.8;
+}
+
+/* ==========================================================================
+   Scrollbar / focus / selection
+   ========================================================================== */
+
+/* Applied to <html> by ModalShell when a modal is open. Prevents the
+   background page from scrolling while the modal's own scroll container
+   (the fixed wrapper) remains independently scrollable. */
+html.modal-open {
+	overflow: hidden;
+}
+
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--scrollbar-thumb);
+	border-radius: var(--radius-sm);
+	transition: background var(--duration-micro) var(--ease-in-out);
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--scrollbar-thumb-hover);
+}
+
+:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+	border-radius: var(--radius-sm);
+}
+
+::selection {
+	background-color: var(--accent-muted);
+	color: var(--text-primary);
+}
+
+/* ==========================================================================
+   Loading indicator
+   ========================================================================== */
+@keyframes a-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.a-spinner {
+	display: inline-block;
+	border-radius: var(--radius-full);
+	border: 2px solid var(--accent-muted);
+	border-top-color: var(--accent-primary);
+	animation: a-spin 0.9s linear infinite;
+}
+
+/* Shimmer sweep used by skeleton/loading surfaces (opacity-only, cheap). */
+@keyframes a-shimmer {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+.a-skeleton {
+	position: relative;
+	overflow: hidden;
+	background: var(--surface-tertiary);
+	border-radius: var(--radius-md);
+}
+
+.a-skeleton::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: var(--gradient-sheen);
+	animation: a-shimmer 1.8s var(--ease-in-out) infinite;
+}
+
+/* ==========================================================================
+   View Transitions — animated theme switch (Chromium / Win11 target).
+   The NEW snapshot is painted on top and fades in while the OLD snapshot
+   stays fully visible beneath it — a true crossfade of the two themes with
+   zero flashing and zero layout shift. (We deliberately do NOT animate the
+   old snapshot out: that would reveal the bare body color underneath.)
+   ========================================================================== */
+::view-transition-old(root) {
+	animation: none;
+}
+
+::view-transition-new(root) {
+	animation: a-vt-theme-fade-in var(--duration-component) var(--ease-in-out) both;
+	mix-blend-mode: normal;
+}
+
+@keyframes a-vt-theme-fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+/* ==========================================================================
+   Reduced motion — polished static alternative.
+   Entrance states resolve instantly; ambients stop drifting; spinners keep
+   a functional (non-decorative) rotation because they communicate state.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	/* Keep essential progress feedback visible but calm. */
+	.a-spinner {
+		animation-duration: 1.6s !important;
+		animation-iteration-count: infinite !important;
+	}
+	.a-skeleton::after {
+		animation: none;
+	}
+	.a-aurora__blob {
+		animation: none !important;
+	}
+
+	::view-transition-new(root) {
+		animation-duration: 0.01ms !important;
+	}
+}
+
+/* Native form widgets (Chromium date/calendar pickers, scrollbars, autofill
+   highlights) follow the active theme surface, so the date input popup and
+   dropdown caret chrome sit inside the Glacier/Midnight palette instead of
+   OS-default colors. */
+[data-theme="dark"] {
+	color-scheme: dark;
+}
+[data-theme="light"] {
+	color-scheme: light;
+}

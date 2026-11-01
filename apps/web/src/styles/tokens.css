@@ -1,0 +1,391 @@
+/* ==========================================================================
+   Aegis Design System — Cinematic Glassmorphism · Design Tokens
+   --------------------------------------------------------------------------
+   Three layers:
+     1. Palette (--a-*)      raw per-theme color values. Never used by components.
+     2. Semantic (--surface-*, --text-*, --border-*, --accent-*, --gold-*,
+        --glass-*, --shadow-*, --gradient-*, --focus-ring)  what components use.
+     3. Dimensional (--space-*, --radius-*, --blur-*, --elev-*, type scale,
+        motion CSS mirrors)  shared across themes.
+
+   Theme switching: [data-theme="light"|"dark"] on <html>.
+   Legacy names from the previous identity are preserved so existing markup
+   keeps resolving while gaining the new palette.
+   ========================================================================== */
+
+:root {
+	/* --- Typography ------------------------------------------------------- */
+	--font-display: "Sora", system-ui, sans-serif;
+	--font-body: "Inter", system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+	/* Type scale — restrained registers + mono. Sizes in px for a
+     desktop-first app; line-heights tuned for glass surfaces. */
+	--text-display: 700 2rem / 1.15 var(--font-display); /* 32px showcase hero */
+	--text-title: 600 1.5rem / 1.25 var(--font-display); /* 24px page title */
+	--text-heading: 600 1.0625rem / 1.35 var(--font-display); /* 17px section heading */
+	--text-subheading: 500 0.9375rem / 1.4 var(--font-body); /* 15px sub-heading */
+	--text-body: 400 0.875rem / 1.55 var(--font-body); /* 14px body */
+	--text-supporting: 400 0.8125rem / 1.5 var(--font-body); /* 13px supporting */
+	--text-label: 500 0.6875rem / 1.4 var(--font-body); /* 11px label */
+	--text-meta: 400 0.625rem / 1.4 var(--font-body); /* 10px small metadata */
+	--text-mono: 400 0.8125rem / 1.5 var(--font-mono); /* 13px technical identifiers */
+	--tracking-label: 0.08em;
+	--tracking-display: -0.015em;
+
+	/* --- Spacing scale ---------------------------------------------------- */
+	--space-2xs: 0.25rem;
+	--space-xs: 0.5rem;
+	--space-sm: 0.75rem;
+	--space-md: 1rem;
+	--space-lg: 1.5rem;
+	--space-xl: 2rem;
+	--space-2xl: 3rem;
+	--space-3xl: 4rem;
+
+	/* --- Radii ------------------------------------------------------------ */
+	--radius-sm: 0.375rem;
+	--radius-md: 0.5rem;
+	--radius-lg: 0.75rem;
+	--radius-xl: 1rem;
+	--radius-2xl: 1.25rem;
+	--radius-full: 9999px;
+
+	/* --- Blur tiers (performance budget: max ~4 concurrent blur surfaces) -- */
+	--blur-xs: 6px;
+	--blur-sm: 10px;
+	--blur-md: 16px;
+	--blur-lg: 24px;
+	--blur-xl: 40px;
+
+	/* --- Elevation levels -------------------------------------------------- */
+	--elev-flat: none;
+	--elev-1: var(--shadow-sm);
+	--elev-2: var(--shadow-md);
+	--elev-3: var(--shadow-lg);
+	--elev-4: var(--shadow-xl);
+	--elev-modal: var(--shadow-modal);
+
+	/* --- Motion tokens (CSS mirror of src/motion/tokens.ts — keep in sync) - */
+	--ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+	--ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+	--duration-micro: 150ms;
+	--duration-control: 220ms;
+	--duration-component: 300ms;
+	--duration-panel: 380ms;
+	--duration-page: 500ms;
+	--duration-cinematic: 800ms;
+	/* legacy aliases */
+	--duration-fast: var(--duration-micro);
+	--duration-normal: var(--duration-control);
+	--duration-slow: var(--duration-component);
+	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ==========================================================================
+   DARK THEME — Midnight Blue / Deep Navy
+   ========================================================================== */
+[data-theme="dark"] {
+	color-scheme: dark;
+
+	/* Palette */
+	--a-navy-950: #050a18;
+	--a-navy-900: #081026;
+	--a-navy-800: #0c1838;
+	--a-navy-700: #12224a;
+	--a-navy-600: #1a2f63;
+	--a-blue-400: #6aa5ff;
+	--a-blue-300: #9cc4ff;
+	--a-blue-500: #3e7fe0;
+	--a-gold-500: #d9b36a;
+	--a-gold-300: #ecd3a2;
+	--a-ice: #dbe8ff;
+
+	/* Surfaces */
+	--surface-base: var(--a-navy-950);
+	--surface-primary: var(--a-navy-900);
+	--surface-secondary: var(--a-navy-800);
+	--surface-tertiary: var(--a-navy-700);
+	--surface-elevated: #14213f;
+	--surface-overlay: rgba(8, 16, 38, 0.82);
+	--surface-input: rgba(18, 34, 74, 0.55);
+
+	/* Text */
+	--text-primary: #eef4ff;
+	--text-secondary: #b7c8e4;
+	--text-tertiary: #7d92b8;
+	--text-disabled: #55688a;
+	--text-inverse: #081026;
+	--text-on-accent: #061024;
+
+	/* Borders */
+	--border-subtle: rgba(106, 165, 255, 0.12);
+	--border-default: rgba(106, 165, 255, 0.22);
+	--border-strong: rgba(156, 196, 255, 0.38);
+	--border-focus: var(--a-blue-400);
+	--border-highlight: rgba(219, 232, 255, 0.14); /* inner top highlight on glass */
+
+	/* Accent — cool blue lighting */
+	--accent-primary: var(--a-blue-400);
+	--accent-hover: var(--a-blue-300);
+	--accent-active: var(--a-blue-500);
+	--accent-muted: rgba(106, 165, 255, 0.14);
+	--accent-border: rgba(106, 165, 255, 0.35);
+	--accent-glow: rgba(106, 165, 255, 0.22);
+
+	/* Golden highlights & surfaces */
+	--gold: var(--a-gold-500);
+	--gold-bright: var(--a-gold-300);
+	--gold-muted: rgba(217, 179, 106, 0.12);
+	--gold-border: rgba(217, 179, 106, 0.34);
+	--gold-border-focus: rgba(236, 211, 162, 0.75);
+	--gold-surface: rgba(217, 179, 106, 0.07);
+	--gold-glow: rgba(217, 179, 106, 0.22);
+	--gradient-gold: linear-gradient(135deg, #e5c382 0%, #d9b36a 50%, #b98f3e 100%);
+	--gradient-gold-hover: linear-gradient(135deg, #ecd3a2 0%, #e5c382 50%, #c49944 100%);
+	--gradient-gold-subtle: linear-gradient(
+		135deg,
+		rgba(217, 179, 106, 0.16) 0%,
+		rgba(217, 179, 106, 0.04) 100%
+	);
+	--text-on-gold: #081026;
+	--specular-rim: inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+	--specular-rim-subtle: inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+	--specular-rim-gold: inset 0 1px 0 0 rgba(255, 245, 215, 0.45);
+
+	/* Glass system */
+	--glass-bg: rgba(18, 34, 74, 0.55);
+	--glass-bg-subtle: rgba(18, 34, 74, 0.34);
+	--glass-bg-elevated: rgba(26, 47, 99, 0.62);
+	--glass-bg-modal: rgba(12, 24, 56, 0.78);
+	--glass-opacity: 0.55;
+	--glass-border: rgba(156, 196, 255, 0.18);
+	--glass-border-strong: rgba(156, 196, 255, 0.32);
+	--glass-highlight: linear-gradient(150deg, rgba(219, 232, 255, 0.14), rgba(219, 232, 255, 0) 42%);
+	--glass-tint-cool: rgba(106, 165, 255, 0.08);
+
+	/* Shadows */
+	--shadow-color: 222 60% 3%;
+	--shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.5);
+	--shadow-sm:
+		0 2px 6px -1px hsl(var(--shadow-color) / 0.55), 0 1px 2px hsl(var(--shadow-color) / 0.4);
+	--shadow-md:
+		0 8px 20px -6px hsl(var(--shadow-color) / 0.6), 0 2px 6px -2px hsl(var(--shadow-color) / 0.45);
+	--shadow-lg:
+		0 16px 40px -12px hsl(var(--shadow-color) / 0.65),
+		0 4px 12px -4px hsl(var(--shadow-color) / 0.5);
+	--shadow-xl:
+		0 28px 70px -20px hsl(var(--shadow-color) / 0.75),
+		0 10px 24px -10px hsl(var(--shadow-color) / 0.55);
+	--shadow-modal:
+		0 40px 90px -24px hsl(var(--shadow-color) / 0.8), 0 0 0 1px rgba(156, 196, 255, 0.12);
+	--shadow-accent: 0 0 24px -6px var(--accent-glow);
+	--shadow-gold: 0 0 20px -6px var(--gold-glow);
+	--shadow-gold-elevated: 0 4px 16px -2px rgba(217, 179, 106, 0.32), 0 1px 3px 0 rgba(0, 0, 0, 0.5);
+
+	/* Focus ring */
+	--focus-ring: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--accent-primary);
+	--focus-ring-glow: 0 0 0 4px rgba(106, 165, 255, 0.35);
+
+	/* Gradients */
+	--gradient-app:
+		radial-gradient(120% 90% at 18% -8%, rgba(26, 47, 99, 0.9) 0%, transparent 55%),
+		radial-gradient(110% 80% at 88% 108%, rgba(18, 34, 74, 0.85) 0%, transparent 60%),
+		linear-gradient(180deg, var(--a-navy-900) 0%, var(--a-navy-950) 100%);
+	--gradient-sheen: linear-gradient(120deg, rgba(219, 232, 255, 0.06), transparent 38%);
+	--gradient-accent: linear-gradient(135deg, var(--a-blue-500), var(--a-blue-400));
+	--gradient-gold-hairline: linear-gradient(
+		90deg,
+		transparent,
+		var(--gold-border) 22%,
+		var(--gold) 50%,
+		var(--gold-border) 78%,
+		transparent
+	);
+	--aurora-1: rgba(62, 127, 224, 0.28);
+	--aurora-2: rgba(106, 165, 255, 0.16);
+	--aurora-3: rgba(217, 179, 106, 0.08);
+
+	/* Semantic status */
+	--success: #4ade80;
+	--success-muted: rgba(74, 222, 128, 0.12);
+	--warning: #fbbf24;
+	--warning-muted: rgba(251, 191, 36, 0.12);
+	--danger: #f87171;
+	--danger-muted: rgba(248, 113, 113, 0.12);
+	--info: var(--a-blue-400);
+	--info-muted: var(--accent-muted);
+
+	/* Credential-type accents (contract-visible vocabulary) */
+	--type-password: #8ea8ff;
+	--type-api-key: #5ed4e8;
+	--type-token: var(--a-gold-500);
+	--type-ssh-key: #4ade80;
+
+	/* Scrollbar / selection */
+	--scrollbar-thumb: rgba(106, 165, 255, 0.22);
+	--scrollbar-thumb-hover: rgba(106, 165, 255, 0.4);
+}
+
+/* ==========================================================================
+   LIGHT THEME — Soft White / Pale Blue with restrained gold
+   ========================================================================== */
+[data-theme="light"] {
+	color-scheme: light;
+
+	/* Palette */
+	--a-white-950: #ffffff;
+	--a-bluewhite-50: #f4f8fe;
+	--a-bluewhite-100: #e9f1fb;
+	--a-bluewhite-200: #d9e7f8;
+	--a-blue-ink-900: #16305e;
+	--a-blue-ink-700: #2c4d85;
+	--a-blue-ink-500: #4a6da3;
+	--a-accent-600: #1d5fc2;
+	--a-accent-500: #2f74d6;
+	--a-accent-300: #7fa9ec;
+	--a-gold-600: #b98f3e;
+	--a-gold-400: #d8b46a;
+
+	/* Surfaces */
+	--surface-base: #eef4fc;
+	--surface-primary: #ffffff;
+	--surface-secondary: var(--a-bluewhite-50);
+	--surface-tertiary: var(--a-bluewhite-100);
+	--surface-elevated: #ffffff;
+	--surface-overlay: rgba(255, 255, 255, 0.85);
+	--surface-input: rgba(233, 241, 251, 0.75);
+
+	/* Text — deep / muted blues */
+	--text-primary: var(--a-blue-ink-900);
+	--text-secondary: var(--a-blue-ink-700);
+	--text-tertiary: var(--a-blue-ink-500);
+	--text-disabled: #94aac9;
+	--text-inverse: #ffffff;
+	--text-on-accent: #ffffff;
+
+	/* Borders */
+	--border-subtle: rgba(47, 116, 214, 0.14);
+	--border-default: rgba(44, 77, 133, 0.2);
+	--border-strong: rgba(44, 77, 133, 0.34);
+	--border-focus: var(--a-accent-500);
+	--border-highlight: rgba(255, 255, 255, 0.65);
+
+	/* Accent — darker blues for emphasis */
+	--accent-primary: var(--a-accent-600);
+	--accent-hover: var(--a-accent-500);
+	--accent-active: #174e9f;
+	--accent-muted: rgba(47, 116, 214, 0.1);
+	--accent-border: rgba(47, 116, 214, 0.3);
+	--accent-glow: rgba(47, 116, 214, 0.25);
+
+	/* Golden highlights & surfaces — restrained */
+	--gold: var(--a-gold-600);
+	--gold-bright: var(--a-gold-400);
+	--gold-muted: rgba(185, 143, 62, 0.1);
+	--gold-border: rgba(185, 143, 62, 0.32);
+	--gold-border-focus: rgba(185, 143, 62, 0.7);
+	--gold-surface: rgba(185, 143, 62, 0.06);
+	--gold-glow: rgba(216, 180, 106, 0.28);
+	--gradient-gold: linear-gradient(135deg, #d8b46a 0%, #c99f48 50%, #b98f3e 100%);
+	--gradient-gold-hover: linear-gradient(135deg, #e2c179 0%, #d8b46a 50%, #a67f33 100%);
+	--gradient-gold-subtle: linear-gradient(
+		135deg,
+		rgba(185, 143, 62, 0.14) 0%,
+		rgba(185, 143, 62, 0.03) 100%
+	);
+	--text-on-gold: #16305e;
+	--specular-rim: inset 0 1px 0 0 rgba(255, 255, 255, 0.85);
+	--specular-rim-subtle: inset 0 1px 0 0 rgba(255, 255, 255, 0.55);
+	--specular-rim-gold: inset 0 1px 0 0 rgba(255, 255, 255, 0.65);
+
+	/* Glass system */
+	--glass-bg: rgba(255, 255, 255, 0.62);
+	--glass-bg-subtle: rgba(255, 255, 255, 0.45);
+	--glass-bg-elevated: rgba(255, 255, 255, 0.78);
+	--glass-bg-modal: rgba(244, 248, 254, 0.85);
+	--glass-opacity: 0.62;
+	--glass-border: rgba(122, 162, 220, 0.35);
+	--glass-border-strong: rgba(74, 109, 163, 0.45);
+	--glass-highlight: linear-gradient(150deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 46%);
+	--glass-tint-cool: rgba(47, 116, 214, 0.05);
+
+	/* Shadows — delicate, blue-tinted */
+	--shadow-color: 216 45% 40%;
+	--shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.08);
+	--shadow-sm: 0 1px 3px hsl(var(--shadow-color) / 0.1), 0 1px 2px hsl(var(--shadow-color) / 0.06);
+	--shadow-md:
+		0 6px 16px -6px hsl(var(--shadow-color) / 0.18), 0 2px 6px -2px hsl(var(--shadow-color) / 0.1);
+	--shadow-lg:
+		0 14px 32px -10px hsl(var(--shadow-color) / 0.22),
+		0 4px 10px -4px hsl(var(--shadow-color) / 0.12);
+	--shadow-xl:
+		0 26px 56px -16px hsl(var(--shadow-color) / 0.26),
+		0 10px 18px -8px hsl(var(--shadow-color) / 0.14);
+	--shadow-modal:
+		0 36px 80px -24px hsl(var(--shadow-color) / 0.32), 0 0 0 1px rgba(122, 162, 220, 0.25);
+	--shadow-accent: 0 0 22px -8px var(--accent-glow);
+	--shadow-gold: 0 0 18px -8px var(--gold-glow);
+	--shadow-gold-elevated:
+		0 4px 14px -2px rgba(185, 143, 62, 0.28), 0 1px 3px 0 rgba(22, 48, 94, 0.14);
+
+	/* Focus ring */
+	--focus-ring: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--accent-primary);
+	--focus-ring-glow: 0 0 0 4px rgba(47, 116, 214, 0.3);
+
+	/* Gradients — subtle light-blue washes */
+	--gradient-app:
+		radial-gradient(110% 80% at 12% -10%, rgba(217, 231, 248, 0.9) 0%, transparent 55%),
+		radial-gradient(120% 90% at 92% 112%, rgba(233, 241, 251, 0.95) 0%, transparent 60%),
+		linear-gradient(180deg, #f7fafd 0%, var(--surface-base) 100%);
+	--gradient-sheen: linear-gradient(120deg, rgba(255, 255, 255, 0.65), transparent 40%);
+	--gradient-accent: linear-gradient(135deg, var(--a-accent-600), var(--a-accent-500));
+	--gradient-gold-hairline: linear-gradient(
+		90deg,
+		transparent,
+		var(--gold-border) 22%,
+		var(--gold) 50%,
+		var(--gold-border) 78%,
+		transparent
+	);
+	--aurora-1: rgba(127, 169, 236, 0.35);
+	--aurora-2: rgba(216, 180, 106, 0.12);
+	--aurora-3: rgba(47, 116, 214, 0.1);
+
+	/* Semantic status */
+	--success: #0f8a54;
+	--success-muted: rgba(15, 138, 84, 0.09);
+	--warning: #b45309;
+	--warning-muted: rgba(180, 83, 9, 0.09);
+	--danger: #c2373b;
+	--danger-muted: rgba(194, 55, 59, 0.08);
+	--info: var(--a-accent-600);
+	--info-muted: var(--accent-muted);
+
+	/* Credential-type accents */
+	--type-password: #5b6fd0;
+	--type-api-key: #0e7fa0;
+	--type-token: var(--a-gold-600);
+	--type-ssh-key: #0f8a54;
+
+	/* Scrollbar / selection */
+	--scrollbar-thumb: rgba(44, 77, 133, 0.22);
+	--scrollbar-thumb-hover: rgba(44, 77, 133, 0.4);
+}
+
+/* ==========================================================================
+   Theme interpolation fallback (used when View Transitions are unavailable):
+   .theme-animating makes tokenized surface properties interpolate smoothly.
+   ========================================================================== */
+.theme-animating *,
+.theme-animating *::before,
+.theme-animating *::after {
+	transition:
+		background-color var(--duration-component) var(--ease-in-out),
+		border-color var(--duration-component) var(--ease-in-out),
+		color var(--duration-component) var(--ease-in-out),
+		fill var(--duration-component) var(--ease-in-out),
+		stroke var(--duration-component) var(--ease-in-out),
+		box-shadow var(--duration-component) var(--ease-in-out) !important;
+}

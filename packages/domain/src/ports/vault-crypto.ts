@@ -10,18 +10,28 @@ import type { VaultKeyEnvelope, VaultSession } from '@aegis/crypto';
 export interface CreateVaultSessionRequest {
 	readonly vaultId: string;
 	readonly passphrase: string;
+	/** Emergency recovery factor; presence requests a second (`recovery`) envelope. */
+	readonly recoveryKey?: string;
 }
 
 export interface UnlockVaultSessionRequest {
 	readonly vaultId: string;
+	/** Master passphrase for the primary envelope, or the recovery key for the recovery envelope. */
 	readonly passphrase: string;
 	readonly envelope: unknown;
 }
 
+export interface CreatedVaultSession {
+	readonly envelope: VaultKeyEnvelope;
+	readonly session: VaultSession;
+	/** Present only when a recovery key was supplied to creation. */
+	readonly recoveryEnvelope?: VaultKeyEnvelope;
+}
+
 export interface VaultCryptoPort {
-	createVaultSession(
-		input: CreateVaultSessionRequest,
-	): Promise<{ envelope: VaultKeyEnvelope; session: VaultSession }>;
+	/** Generate a fresh, human-transcribable emergency recovery key (shown once). */
+	generateRecoveryKey(): string;
+	createVaultSession(input: CreateVaultSessionRequest): Promise<CreatedVaultSession>;
 	unlockVaultSession(input: UnlockVaultSessionRequest): Promise<VaultSession>;
 	validateEnvelope(input: unknown): VaultKeyEnvelope;
 }

@@ -54,6 +54,7 @@ function defaultLogger(logLevel: LogLevel): PinoRedactionOptions {
 				'req.headers.authorization',
 				'req.headers.cookie',
 				'req.body.passphrase',
+				'req.body.recoveryKey',
 				'req.body.payload.secret',
 				'req.body.payload.notes',
 				'res.headers["set-cookie"]',

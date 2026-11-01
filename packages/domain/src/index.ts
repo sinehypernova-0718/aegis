@@ -37,6 +37,7 @@ export type {
 } from './ports/credential-repository.js';
 export type {
 	CreateVaultSessionRequest,
+	CreatedVaultSession,
 	UnlockVaultSessionRequest,
 	VaultCryptoPort,
 } from './ports/vault-crypto.js';
@@ -90,6 +91,12 @@ export type {
 	UnlockVaultInput,
 	UnlockVaultResult,
 } from './use-cases/vault/unlock-vault.js';
+export { RecoverVault } from './use-cases/vault/recover-vault.js';
+export type {
+	RecoverVaultDeps,
+	RecoverVaultInput,
+	RecoverVaultResult,
+} from './use-cases/vault/recover-vault.js';
 export { LockVault } from './use-cases/vault/lock-vault.js';
 export type {
 	LockVaultDeps,

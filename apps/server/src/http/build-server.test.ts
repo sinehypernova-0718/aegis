@@ -11,6 +11,7 @@ import {
 	TEST_API_TOKEN,
 	TEST_CORRECT_PASSPHRASE,
 	TEST_NOTE_MARKER,
+	TEST_RECOVERY_KEY,
 	TEST_SECRET_MARKER,
 	TEST_VAULT_ID,
 	TEST_WRONG_PASSPHRASE,
@@ -168,7 +169,7 @@ describe('server boundary: local-only security', () => {
 
 describe('server boundary: vault routes', () => {
 	it('initializes, reports status, locks, and unlocks', async () => {
-		const { app } = makeApp();
+		const { app, fake } = makeApp();
 
 		const initialized = await inject(app, {
 			method: 'POST',
@@ -179,6 +180,7 @@ describe('server boundary: vault routes', () => {
 		expect(initialized.json()).toEqual({
 			vaultId: TEST_VAULT_ID,
 			status: 'unlocked',
+			recoveryKey: TEST_RECOVERY_KEY,
 		});
 
 		const status = await inject(app, {
@@ -202,6 +204,23 @@ describe('server boundary: vault routes', () => {
 		});
 		expect(unlocked.statusCode).toBe(200);
 		expect(unlocked.json()).toEqual({ vaultId: TEST_VAULT_ID, status: 'unlocked' });
+
+		// Recovery: wrong key is throttled/counted, correct key unlocks.
+		await inject(app, { method: 'POST', url: `/vaults/${TEST_VAULT_ID}/lock` });
+		const badRecover = await inject(app, {
+			method: 'POST',
+			url: `/vaults/${TEST_VAULT_ID}/recover`,
+			payload: { recoveryKey: 'AEGIS-RCV-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX' },
+		});
+		expect(badRecover.statusCode).toBe(401);
+		const recovered = await inject(app, {
+			method: 'POST',
+			url: `/vaults/${TEST_VAULT_ID}/recover`,
+			payload: { recoveryKey: TEST_RECOVERY_KEY },
+		});
+		expect(recovered.statusCode).toBe(200);
+		expect(recovered.json()).toEqual({ vaultId: TEST_VAULT_ID, status: 'unlocked' });
+		expect(fake.state.calls.recover).toBe(2);
 		await app.close();
 	});
 
