@@ -24,12 +24,16 @@ import UnlockView from '@/features/vault/UnlockView.vue';
 import OverviewView from '@/features/overview/OverviewView.vue';
 import PasswordsView from '@/features/passwords/PasswordsView.vue';
 import ApiKeysView from '@/features/apikeys/ApiKeysView.vue';
+import SshKeysView from '@/features/sshkeys/SshKeysView.vue';
+import OAuth2View from '@/features/oauth2/OAuth2View.vue';
+import SecureNotesView from '@/features/securenotes/SecureNotesView.vue';
 import SecurityView from '@/features/security/SecurityView.vue';
 import SettingsView from '@/features/settings/SettingsView.vue';
 
 // Layout
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import AppToasts from '@/components/ui/AppToasts.vue';
+import CreateCredentialModal from '@/components/vault/CreateCredentialModal.vue';
 
 // Design-system showcase (Phase 1 review surface — hash route only, never
 // renders vault data and is not part of the application navigation model).
@@ -102,6 +106,9 @@ watch(
               <OverviewView v-if="pageKey === 'overview'" class="h-full" />
               <PasswordsView v-else-if="pageKey === 'passwords'" class="h-full" />
               <ApiKeysView v-else-if="pageKey === 'api-keys'" class="h-full" />
+              <SshKeysView v-else-if="pageKey === 'ssh-keys'" class="h-full" />
+              <OAuth2View v-else-if="pageKey === 'oauth2'" class="h-full" />
+              <SecureNotesView v-else-if="pageKey === 'secure-notes'" class="h-full" />
               <SecurityView v-else-if="pageKey === 'security'" class="h-full" />
               <SettingsView v-else-if="pageKey === 'settings'" class="h-full" />
             </MotionPage>
@@ -109,6 +116,7 @@ watch(
         </main>
 
         <AppToasts />
+        <CreateCredentialModal />
       </motion.div>
     </AnimatePresence>
   </div>
