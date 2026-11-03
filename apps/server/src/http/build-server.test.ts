@@ -1,5 +1,11 @@
 import { Writable } from 'node:stream';
-import { PersistenceError, VaultAlreadyInitializedError, VaultLockedError } from '@aegis/domain';
+import {
+	CredentialDecryptionError,
+	InvalidStoredCredentialPayloadError,
+	PersistenceError,
+	VaultAlreadyInitializedError,
+	VaultLockedError,
+} from '@aegis/domain';
 import type { FastifyInstance, FastifyServerOptions } from 'fastify';
 import { describe, expect, it } from 'vitest';
 import {
@@ -290,6 +296,26 @@ describe('server boundary: vault routes', () => {
 		expect(failure.statusCode).toBe(500);
 		expect(failure.json()).toMatchObject({ code: 'INTERNAL_ERROR' });
 		expect(failure.body).not.toContain('vault_records');
+
+		fake.container.getCredential.execute = async () => {
+			throw new CredentialDecryptionError();
+		};
+		const decryptionFailure = await inject(app, {
+			method: 'GET',
+			url: `/vaults/${TEST_VAULT_ID}/credentials/${CREDENTIAL_ID}`,
+		});
+		expect(decryptionFailure.statusCode).toBe(500);
+		expect(decryptionFailure.json()).toMatchObject({ code: 'INTERNAL_ERROR' });
+
+		fake.container.getCredential.execute = async () => {
+			throw new InvalidStoredCredentialPayloadError();
+		};
+		const invalidStoredPayload = await inject(app, {
+			method: 'GET',
+			url: `/vaults/${TEST_VAULT_ID}/credentials/${CREDENTIAL_ID}`,
+		});
+		expect(invalidStoredPayload.statusCode).toBe(500);
+		expect(invalidStoredPayload.json()).toMatchObject({ code: 'INTERNAL_ERROR' });
 		await app.close();
 	});
 

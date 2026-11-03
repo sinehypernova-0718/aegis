@@ -332,10 +332,9 @@ export class HttpVaultClient implements VaultClient {
 
 	async getCredentialCounts(): Promise<ApiCredentialCounts> {
 		try {
-			const response = await this.#request(
-				`/vaults/${this.#vaultId}/credential-counts`,
-				{ method: 'GET' },
-			);
+			const response = await this.#request(`/vaults/${this.#vaultId}/credential-counts`, {
+				method: 'GET',
+			});
 			return await this.#json<ApiCredentialCounts>(response);
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
@@ -552,15 +551,21 @@ export class HttpVaultClient implements VaultClient {
 
 	async getCredential(id: string): Promise<CredentialDetail> {
 		try {
-			const response = await this.#request(
-				`/vaults/${this.#vaultId}/credentials/${encodeURIComponent(id)}`,
-				{ method: 'GET' },
-			);
-			const api = await this.#json<ApiCredentialDetail>(response);
-			return toUiDetail(api, this.#vaultId);
+			return (await this.#fetchCredential(id)).detail;
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
 		}
+	}
+
+	async #fetchCredential(
+		id: string,
+	): Promise<{ readonly detail: CredentialDetail; readonly apiKind: ApiCredentialKind }> {
+		const response = await this.#request(
+			`/vaults/${this.#vaultId}/credentials/${encodeURIComponent(id)}`,
+			{ method: 'GET' },
+		);
+		const api = await this.#json<ApiCredentialDetail>(response);
+		return { detail: toUiDetail(api, this.#vaultId), apiKind: api.payload.type };
 	}
 
 	/**
@@ -569,7 +574,7 @@ export class HttpVaultClient implements VaultClient {
 	 */
 	async updateCredential(id: string, input: UpdateCredentialInput): Promise<CredentialSummary> {
 		try {
-			const current = await this.getCredential(id);
+			const { detail: current, apiKind } = await this.#fetchCredential(id);
 			const merged: UiPayloadFields = omitUndefined({
 				name: input.title ?? current.title,
 				secret: input.secret ?? current.secret,
@@ -585,7 +590,7 @@ export class HttpVaultClient implements VaultClient {
 				{
 					method: 'PUT',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(toApiPayload(UI_KIND_TO_API[current.kind], merged)),
+					body: JSON.stringify(toApiPayload(apiKind, merged)),
 				},
 			);
 			const result = await this.#json<ApiUpdateCredentialResponse>(response);

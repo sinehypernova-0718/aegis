@@ -36,6 +36,7 @@ export {
 	DOMAIN_ERROR_CODES,
 	DomainError,
 	InvalidCredentialPayloadError,
+	InvalidStoredCredentialPayloadError,
 	InvalidCursorError,
 	InvalidKeyEnvelopeError,
 	InvalidPaginationError,
