@@ -11,6 +11,7 @@ export const DOMAIN_ERROR_CODES = [
 	'DOMAIN_CREDENTIAL_NOT_FOUND',
 	'DOMAIN_INVALID_CREDENTIAL_PAYLOAD',
 	'DOMAIN_CREDENTIAL_DECRYPTION_FAILED',
+	'DOMAIN_STORED_CREDENTIAL_INVALID',
 	'DOMAIN_INVALID_PAGINATION',
 	'DOMAIN_INVALID_CURSOR',
 	'DOMAIN_PERSISTENCE_FAILED',
@@ -109,6 +110,12 @@ export class InvalidCredentialPayloadError extends DomainError {
 export class CredentialDecryptionError extends DomainError {
 	constructor(message = 'credential could not be decrypted', options?: ErrorOptions) {
 		super(message, 'DOMAIN_CREDENTIAL_DECRYPTION_FAILED', options);
+	}
+}
+
+export class InvalidStoredCredentialPayloadError extends DomainError {
+	constructor(message = 'stored credential payload is invalid', options?: ErrorOptions) {
+		super(message, 'DOMAIN_STORED_CREDENTIAL_INVALID', options);
 	}
 }
 

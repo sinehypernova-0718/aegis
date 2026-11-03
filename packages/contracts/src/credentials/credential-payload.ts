@@ -17,6 +17,12 @@ export const CREDENTIAL_NOTES_MAX_LENGTH = 4_096 as const;
 export const CREDENTIAL_TAG_MAX_LENGTH = 128 as const;
 export const CREDENTIAL_MAX_TAGS = 32 as const;
 
+const credentialTagsSchema = z
+	.array(boundedNonBlankString(1, CREDENTIAL_TAG_MAX_LENGTH))
+	.transform((tags) => [...new Set(tags)])
+	.pipe(z.array(boundedNonBlankString(1, CREDENTIAL_TAG_MAX_LENGTH)).max(CREDENTIAL_MAX_TAGS))
+	.default([]);
+
 /** Validated caller-supplied credential fields (tags present). */
 export interface CredentialPayloadFields {
 	type: CredentialKind;
@@ -114,10 +120,7 @@ const CredentialInputSchema = strictObject({
 	username: boundedNonBlankString(1, CREDENTIAL_USERNAME_MAX_LENGTH).optional(),
 	url: boundedNonBlankString(1, CREDENTIAL_URL_MAX_LENGTH).optional(),
 	notes: boundedNonBlankString(1, CREDENTIAL_NOTES_MAX_LENGTH).optional(),
-	tags: z
-		.array(boundedNonBlankString(1, CREDENTIAL_TAG_MAX_LENGTH))
-		.max(CREDENTIAL_MAX_TAGS)
-		.default([]),
+	tags: credentialTagsSchema,
 	expiresAt: IsoUtcTimestampSchema.optional(),
 	oauth2Metadata: OAuth2MetadataSchema.optional(),
 });

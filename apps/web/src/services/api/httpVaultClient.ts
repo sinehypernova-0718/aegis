@@ -195,6 +195,7 @@ function toApiPayload(
 export class HttpVaultClient implements VaultClient {
 	readonly #session: SessionClient;
 	readonly #vaultId: string;
+	readonly #apiKindByCredentialId = new Map<string, ApiCredentialKind>();
 
 	/** Last state reported or set by this client (for the sync `isUnlocked()`). */
 	#state: 'uninitialized' | 'locked' | 'unlocked' | null = null;
@@ -332,10 +333,9 @@ export class HttpVaultClient implements VaultClient {
 
 	async getCredentialCounts(): Promise<ApiCredentialCounts> {
 		try {
-			const response = await this.#request(
-				`/vaults/${this.#vaultId}/credential-counts`,
-				{ method: 'GET' },
-			);
+			const response = await this.#request(`/vaults/${this.#vaultId}/credential-counts`, {
+				method: 'GET',
+			});
 			return await this.#json<ApiCredentialCounts>(response);
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
@@ -525,7 +525,10 @@ export class HttpVaultClient implements VaultClient {
 			);
 			const page = await this.#json<ApiListCredentialsResult>(response);
 			return {
-				items: page.items.map((item) => toUiSummary(item, this.#vaultId)),
+				items: page.items.map((item) => {
+					this.#apiKindByCredentialId.set(item.id, item.type);
+					return toUiSummary(item, this.#vaultId);
+				}),
 				nextCursor: page.nextCursor,
 			};
 		} catch (cause) {
@@ -557,6 +560,7 @@ export class HttpVaultClient implements VaultClient {
 				{ method: 'GET' },
 			);
 			const api = await this.#json<ApiCredentialDetail>(response);
+			this.#apiKindByCredentialId.set(id, api.payload.type);
 			return toUiDetail(api, this.#vaultId);
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
@@ -585,7 +589,12 @@ export class HttpVaultClient implements VaultClient {
 				{
 					method: 'PUT',
 					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify(toApiPayload(UI_KIND_TO_API[current.kind], merged)),
+					body: JSON.stringify(
+						toApiPayload(
+							this.#apiKindByCredentialId.get(id) ?? UI_KIND_TO_API[current.kind],
+							merged,
+						),
+					),
 				},
 			);
 			const result = await this.#json<ApiUpdateCredentialResponse>(response);
@@ -629,6 +638,7 @@ export class HttpVaultClient implements VaultClient {
 				{ method: 'DELETE' },
 			);
 			await this.#json<ApiDeleteCredentialResponse>(response);
+			this.#apiKindByCredentialId.delete(id);
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
 		}

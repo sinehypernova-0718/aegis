@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-import { InvalidCredentialPayloadError } from '../errors/domain-errors.js';
+import {
+	InvalidCredentialPayloadError,
+	InvalidStoredCredentialPayloadError,
+} from '../errors/domain-errors.js';
 import { CREDENTIAL_KINDS, type CredentialKind } from './credential-kind.js';
 
 /** Payload schema version stored inside the ciphertext (distinct from the
@@ -31,6 +34,12 @@ const boundedNonBlankString = (minimum: number, maximum: number) =>
 		.min(minimum)
 		.max(maximum)
 		.refine((value) => value.trim().length >= minimum);
+
+const credentialTagsSchema = z
+	.array(boundedNonBlankString(1, CREDENTIAL_TAG_MAX_LENGTH))
+	.transform((tags) => [...new Set(tags)])
+	.pipe(z.array(boundedNonBlankString(1, CREDENTIAL_TAG_MAX_LENGTH)).max(CREDENTIAL_MAX_TAGS))
+	.default([]);
 
 export interface OAuth2Metadata {
 	appName?: string | undefined;
@@ -125,10 +134,7 @@ const CredentialInputSchema = z
 		username: boundedNonBlankString(1, CREDENTIAL_USERNAME_MAX_LENGTH).optional(),
 		url: boundedNonBlankString(1, CREDENTIAL_URL_MAX_LENGTH).optional(),
 		notes: boundedNonBlankString(1, CREDENTIAL_NOTES_MAX_LENGTH).optional(),
-		tags: z
-			.array(boundedNonBlankString(1, CREDENTIAL_TAG_MAX_LENGTH))
-			.max(CREDENTIAL_MAX_TAGS)
-			.default([]),
+		tags: credentialTagsSchema,
 		expiresAt: IsoUtcTimestampSchema.optional(),
 		oauth2Metadata: OAuth2MetadataSchema.optional(),
 	})
@@ -187,22 +193,6 @@ function toPayload(fields: ParsedFields): CredentialPayload {
 	};
 }
 
-function dedupeTags(input: unknown): unknown {
-	if (typeof input !== 'object' || input === null) return input;
-	const record = input as Record<string, unknown>;
-	if (!Array.isArray(record.tags)) return input;
-	const seen = new Set<string>();
-	const deduped: unknown[] = [];
-	for (const tag of record.tags) {
-		if (typeof tag === 'string') {
-			if (seen.has(tag)) continue;
-			seen.add(tag);
-		}
-		deduped.push(tag);
-	}
-	return { ...record, tags: deduped };
-}
-
 /**
  * Validate and canonicalize user-supplied credential fields using the caller
  * input schema. `schemaVersion` is always stamped to the current version. Exact
@@ -218,7 +208,7 @@ export function validateCredentialPayload(input: unknown): CredentialPayload {
 				message: 'required for oauth2 credentials',
 			});
 		}
-	}).safeParse(dedupeTags(input));
+	}).safeParse(input);
 	if (!result.success) {
 		throw new InvalidCredentialPayloadError('invalid credential payload');
 	}
@@ -258,11 +248,11 @@ export function parseCredentialPayload(bytes: Uint8Array): CredentialPayload {
 	try {
 		parsed = JSON.parse(decoder.decode(bytes));
 	} catch {
-		throw new InvalidCredentialPayloadError('decrypted payload is not valid JSON');
+		throw new InvalidStoredCredentialPayloadError('decrypted payload is not valid JSON');
 	}
 	const result = StoredCredentialPayloadSchema.safeParse(parsed);
 	if (!result.success) {
-		throw new InvalidCredentialPayloadError('decrypted payload failed schema validation');
+		throw new InvalidStoredCredentialPayloadError('decrypted payload failed schema validation');
 	}
 	return toPayload(result.data);
 }

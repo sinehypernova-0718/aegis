@@ -7,6 +7,7 @@ import {
 	validateCredentialPayload,
 } from './credential-payload.js';
 import { InvalidCredentialPayloadError } from '../errors/domain-errors.js';
+import { InvalidStoredCredentialPayloadError } from '../errors/domain-errors.js';
 
 const base = {
 	type: 'password' as const,
@@ -82,14 +83,14 @@ describe('credential payload', () => {
 	});
 
 	it('rejects a secret that exceeds the field bound', () => {
-		expect(() =>
-			validateCredentialPayload({ ...base, secret: 'x'.repeat(32_769) }),
-		).toThrow(InvalidCredentialPayloadError);
+		expect(() => validateCredentialPayload({ ...base, secret: 'x'.repeat(32_769) })).toThrow(
+			InvalidCredentialPayloadError,
+		);
 	});
 
 	it('rejects a decrypted payload that is not valid JSON', () => {
 		expect(() => parseCredentialPayload(new TextEncoder().encode('not json'))).toThrow(
-			InvalidCredentialPayloadError,
+			InvalidStoredCredentialPayloadError,
 		);
 	});
 });

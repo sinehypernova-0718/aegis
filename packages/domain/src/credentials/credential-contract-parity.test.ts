@@ -42,9 +42,19 @@ describe('credential validation parity with API contracts', () => {
 		],
 		['invalid metadata timestamp', { ...base, oauth2Metadata: { expiresAt: '2026-01-01' } }],
 		['blank credential name', { ...base, name: '   ' }],
+		[
+			'duplicate tags over the limit are canonicalized before applying the bound',
+			{ ...base, tags: Array.from({ length: 33 }, () => 'duplicate') },
+		],
 	])('agrees for %s', (_label, input) => {
 		expect(domainAccepts(input)).toBe(
 			ContractCredentialPayloadInputSchema.safeParse(input).success,
 		);
+	});
+
+	it('canonicalizes duplicate tags the same way at the contract and domain boundaries', () => {
+		const input = { ...base, tags: Array.from({ length: 33 }, () => 'duplicate') };
+		expect(ContractCredentialPayloadInputSchema.parse(input).tags).toEqual(['duplicate']);
+		expect(validateCredentialPayload(input).tags).toEqual(['duplicate']);
 	});
 });
