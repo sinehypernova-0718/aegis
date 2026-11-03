@@ -42,6 +42,7 @@ import { CATEGORIES, CREDENTIAL_KINDS } from '@/services/api/contracts';
 import { matchProviderFromText } from '@/services/providers';
 import { useVaultStore } from '@/stores/vaultStore';
 import type { CredentialKind, CredentialSummary, UpdateCredentialInput } from '@/types';
+import { formatRelativeTime } from '@/utils/relativeTime';
 
 interface Props {
 	title: string;
@@ -178,20 +179,6 @@ function getSecretLabel(k?: CredentialKind): string {
 		default:
 			return 'Secret Value';
 	}
-}
-
-function formatTimeAgo(dateStr: string): string {
-	const date = new Date(dateStr);
-	const now = new Date();
-	const diff = now.getTime() - date.getTime();
-	const mins = Math.floor(diff / 60000);
-	if (mins < 1) return 'just now';
-	if (mins < 60) return `${mins}m ago`;
-	const hours = Math.floor(mins / 60);
-	if (hours < 24) return `${hours}h ago`;
-	const days = Math.floor(hours / 24);
-	if (days < 30) return `${days}d ago`;
-	return date.toLocaleDateString();
 }
 
 const activeSelectionId = computed(
@@ -423,7 +410,7 @@ async function handleDelete() {
                 {{ item.username || item.category || 'Uncategorized' }}
               </p>
               <span class="text-[10px] tabular-nums shrink-0 text-[var(--text-disabled)] font-mono">
-                {{ formatTimeAgo(item.updatedAt) }}
+                {{ formatRelativeTime(item.updatedAt) }}
               </span>
             </div>
           </button>

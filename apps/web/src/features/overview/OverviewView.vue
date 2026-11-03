@@ -48,6 +48,7 @@ import { cardInteraction } from '@/motion/presets';
 import { cappedStaggerDelay, staggers } from '@/motion/tokens';
 import { useVaultStore } from '@/stores/vaultStore';
 import type { CredentialKind } from '@/types';
+import { formatRelativeTime } from '@/utils/relativeTime';
 
 const store = useVaultStore();
 const { autoLockLabel } = useSessionPreferences();
@@ -142,19 +143,6 @@ function getEventColor(k?: CredentialKind) {
 	}
 }
 
-function formatTimeAgo(dateStr: string): string {
-	const date = new Date(dateStr);
-	const now = new Date();
-	const diff = now.getTime() - date.getTime();
-	const mins = Math.floor(diff / 60000);
-	if (mins < 1) return 'just now';
-	if (mins < 60) return `${mins}m ago`;
-	const hours = Math.floor(mins / 60);
-	if (hours < 24) return `${hours}h ago`;
-	const days = Math.floor(hours / 24);
-	if (days < 30) return `${days}d ago`;
-	return date.toLocaleDateString();
-}
 </script>
 
 <template>
@@ -317,7 +305,7 @@ function formatTimeAgo(dateStr: string): string {
 
                     <!-- Timestamp -->
                     <span class="text-[10px] shrink-0 tabular-nums font-mono text-[var(--text-disabled)]">
-                      {{ formatTimeAgo(evt.timestamp) }}
+                      {{ formatRelativeTime(evt.timestamp) }}
                     </span>
                   </div>
                 </MotionStaggerItem>
@@ -353,7 +341,7 @@ function formatTimeAgo(dateStr: string): string {
                 <div class="flex items-center justify-between">
                   <span class="text-[12px] text-[var(--text-secondary)]">Session Lifetime</span>
                   <span class="text-[11px] tabular-nums font-mono text-[var(--text-primary)]">
-                    {{ store.status.lastUnlockedAt ? formatTimeAgo(store.status.lastUnlockedAt) : 'Active' }}
+                    {{ store.status.lastUnlockedAt ? formatRelativeTime(store.status.lastUnlockedAt) : 'Active' }}
                   </span>
                 </div>
 

@@ -49,6 +49,7 @@ import {
 } from '@/motion/components';
 import { pageScroller } from '@/motion/composables/useScrollContainer';
 import { staggers } from '@/motion/tokens';
+import { formatRelativeTime } from '@/utils/relativeTime';
 
 const store = useVaultStore();
 
@@ -58,18 +59,6 @@ const store = useVaultStore();
  * selection instead of a hardcoded constant.
  */
 const { autoLockLabel } = useSessionPreferences();
-
-function formatTimeAgo(dateStr: string): string {
-	const date = new Date(dateStr);
-	const now = new Date();
-	const diff = now.getTime() - date.getTime();
-	const mins = Math.floor(diff / 60000);
-	if (mins < 1) return 'just now';
-	if (mins < 60) return `${mins}m`;
-	const hours = Math.floor(mins / 60);
-	if (hours < 24) return `${hours}h`;
-	return `${Math.floor(hours / 24)}d`;
-}
 
 /**
  * Individual security indicators — each carries its own explanation and an
@@ -177,7 +166,10 @@ const protections = [
             <KeyValue label="Unlocked">
               <span class="text-[11px] tabular-nums text-[var(--text-primary)]">
                 {{ store.status.lastUnlockedAt
-                    ? formatTimeAgo(store.status.lastUnlockedAt) + ' ago'
+                    ? formatRelativeTime(store.status.lastUnlockedAt, {
+                        compact: true,
+                        includeAgo: true,
+                      })
                     : '—' }}
               </span>
             </KeyValue>

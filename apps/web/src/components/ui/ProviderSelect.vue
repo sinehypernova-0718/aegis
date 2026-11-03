@@ -14,6 +14,7 @@ import { ChevronDown, Search, Check } from 'lucide-vue-next';
 import { durations, easings, springs } from '@/motion/tokens';
 import { PROVIDERS, OTHER_PROVIDER_ID, findProviderById } from '@/services/providers';
 import ProviderLogo from '@/components/ui/ProviderLogo.vue';
+import { useAnchoredPanel } from './useAnchoredPanel';
 
 interface Props {
 	modelValue: string;
@@ -76,30 +77,14 @@ function panelEl(): HTMLElement | null {
 	return node instanceof HTMLElement ? node : null;
 }
 
-const PANEL_GAP = 6;
 const PANEL_MAX_HEIGHT = 320;
 
-const panelStyle = ref<Record<string, string>>({});
-
-function positionPanel(): void {
-	const trigger = triggerRef.value;
-	if (!trigger) return;
-	const rect = trigger.getBoundingClientRect();
-	const measured = panelEl()?.offsetHeight;
-	const panelHeight = measured ?? Math.min(PANEL_MAX_HEIGHT, 320);
-	const spaceBelow = window.innerHeight - rect.bottom;
-	const top =
-		spaceBelow >= panelHeight + PANEL_GAP
-			? rect.bottom + PANEL_GAP
-			: Math.max(PANEL_GAP, rect.top - panelHeight - PANEL_GAP);
-	const left = Math.max(PANEL_GAP, Math.min(rect.left, window.innerWidth - rect.width - PANEL_GAP));
-	panelStyle.value = {
-		position: 'fixed',
-		top: `${top}px`,
-		left: `${left}px`,
-		width: `${rect.width}px`,
-	};
-}
+const { panelStyle, positionPanel } = useAnchoredPanel({
+	open,
+	getTrigger: () => triggerRef.value,
+	getPanel: panelEl,
+	getFallbackHeight: () => PANEL_MAX_HEIGHT,
+});
 
 function setOpen(value: boolean): void {
 	if (open.value === value) return;
@@ -152,19 +137,8 @@ function onDocPointer(e: PointerEvent): void {
 	setOpen(false);
 }
 
-function onReflow(): void {
-	if (open.value) positionPanel();
-}
-
 document.addEventListener('pointerdown', onDocPointer);
-document.addEventListener('scroll', onReflow, true);
-window.addEventListener('resize', onReflow);
-
-onUnmounted(() => {
-	document.removeEventListener('pointerdown', onDocPointer);
-	document.removeEventListener('scroll', onReflow, true);
-	window.removeEventListener('resize', onReflow);
-});
+onUnmounted(() => document.removeEventListener('pointerdown', onDocPointer));
 </script>
 
 <template>
