@@ -54,8 +54,8 @@ export function registerVaultRoutes(app: FastifyInstance, deps: VaultRouteDeps):
 		const params = parseRequest(VaultIdParamsSchema, request.params);
 		const body = parseRequest(UnlockVaultRequestSchema, request.body);
 
-		if (deps.unlockThrottle.blocked) {
-			throw new ThrottledError(deps.unlockThrottle.retryAfterMs);
+		if (!deps.unlockThrottle.tryStartAttempt()) {
+			throw new ThrottledError(deps.unlockThrottle.retryAfterMs || 1_000);
 		}
 
 		try {
@@ -70,6 +70,8 @@ export function registerVaultRoutes(app: FastifyInstance, deps: VaultRouteDeps):
 			// let an unauthenticated caller extend an unlocked session's life.
 			if (error instanceof UnlockRejectedError) deps.unlockThrottle.recordFailure();
 			throw error;
+		} finally {
+			deps.unlockThrottle.finishAttempt();
 		}
 	});
 
@@ -79,8 +81,8 @@ export function registerVaultRoutes(app: FastifyInstance, deps: VaultRouteDeps):
 
 		// Recovery is an unlock factor: it shares the passphrase throttle so an
 		// attacker cannot bypass the lockout by switching factors.
-		if (deps.unlockThrottle.blocked) {
-			throw new ThrottledError(deps.unlockThrottle.retryAfterMs);
+		if (!deps.unlockThrottle.tryStartAttempt()) {
+			throw new ThrottledError(deps.unlockThrottle.retryAfterMs || 1_000);
 		}
 
 		try {
@@ -93,6 +95,8 @@ export function registerVaultRoutes(app: FastifyInstance, deps: VaultRouteDeps):
 		} catch (error) {
 			if (error instanceof UnlockRejectedError) deps.unlockThrottle.recordFailure();
 			throw error;
+		} finally {
+			deps.unlockThrottle.finishAttempt();
 		}
 	});
 
