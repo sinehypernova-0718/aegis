@@ -33,6 +33,7 @@ export interface ApiKeyMetadata {
 
 // OAuth2 credential storage metadata (storage model, without OAuth flow execution)
 export interface OAuth2Metadata {
+	appName?: string | undefined;
 	clientId?: string | undefined;
 	clientSecret?: string | undefined;
 	tokenUrl?: string | undefined;
@@ -174,7 +175,15 @@ export interface CredentialFilters {
 
 export type ThemeMode = 'light' | 'dark';
 
-export type PageId = 'overview' | 'passwords' | 'api-keys' | 'security' | 'settings';
+export type PageId =
+	| 'overview'
+	| 'passwords'
+	| 'api-keys'
+	| 'ssh-keys'
+	| 'oauth2'
+	| 'secure-notes'
+	| 'security'
+	| 'settings';
 
 /**
  * Non-application route surfaced for Phase 1 review only: the design-system

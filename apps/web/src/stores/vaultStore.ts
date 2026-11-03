@@ -60,6 +60,9 @@ export const useVaultStore = defineStore('vault', () => {
 	const reconciliationError = ref<string | null>(null);
 	const recoveryKeyPresented = ref<string | null>(null);
 	const currentPage = ref<PageId>('overview');
+	// Global, centralized credential-creation modal. Any surface (sidebar,
+	// overview, a credential list) can request it without navigating away.
+	const createModalOpen = ref(false);
 
 	let pendingInitPromise: Promise<void> | null = null;
 
@@ -331,6 +334,7 @@ export const useVaultStore = defineStore('vault', () => {
 		activity.value = [];
 		recoveryKeyPresented.value = null;
 		currentPage.value = 'overview';
+		createModalOpen.value = false;
 
 		try {
 			await activeClient.lockVault();
@@ -453,7 +457,19 @@ export const useVaultStore = defineStore('vault', () => {
 	}
 
 	function navigate(page: PageId) {
+		// Section changes must not leave a credential from the previous section
+		// rendered in the detail workspace: clear the active selection so the
+		// list and the detail pane can never disagree (design spec §6 / D2).
+		selectedCredential.value = null;
 		currentPage.value = page;
+	}
+
+	function openCreateModal() {
+		createModalOpen.value = true;
+	}
+
+	function closeCreateModal() {
+		createModalOpen.value = false;
 	}
 
 	return {
@@ -478,6 +494,7 @@ export const useVaultStore = defineStore('vault', () => {
 		reconciliationError,
 		recoveryKeyPresented,
 		currentPage,
+		createModalOpen,
 		isUnlocked,
 		isUninitialized,
 		isLocked,
@@ -502,5 +519,7 @@ export const useVaultStore = defineStore('vault', () => {
 		deleteCredential,
 		setFilters,
 		navigate,
+		openCreateModal,
+		closeCreateModal,
 	};
 });

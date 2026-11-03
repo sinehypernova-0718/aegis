@@ -28,6 +28,7 @@ import {
 	ArrowRight,
 } from 'lucide-vue-next';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useSessionPreferences } from '@/composables/useSessionPreferences';
 import type { CredentialKind } from '@/types';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
@@ -48,11 +49,25 @@ import { cardInteraction } from '@/motion/presets';
 import { staggers, cappedStaggerDelay } from '@/motion/tokens';
 
 const store = useVaultStore();
+const { autoLockLabel } = useSessionPreferences();
+
+/** Dev-only caption: the mock adapter serves synthetic activity, so the UI
+ *  says so honestly; the caption is absent from production builds. */
+const isDev = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV);
 
 const stats = computed(() => {
 	const sshAndOauth = (store.status.sshKeyCount ?? 0) + (store.status.oauth2Count ?? 0);
 
+	// Total first: the primary figure carries the most visual weight, the
+	// per-kind counts read as its breakdown (design spec §5.4).
 	return [
+		{
+			label: 'Total Credentials',
+			value: store.status.credentialCount ?? store.credentials.length,
+			icon: Lock,
+			color: 'var(--accent-primary)',
+			page: 'passwords' as const,
+		},
 		{
 			label: 'Passwords',
 			value: store.status.passwordCount ?? store.passwords.length,
@@ -72,13 +87,6 @@ const stats = computed(() => {
 			value: sshAndOauth,
 			icon: Terminal,
 			color: 'var(--gold)',
-			page: 'passwords' as const,
-		},
-		{
-			label: 'Total Credentials',
-			value: store.status.credentialCount ?? store.credentials.length,
-			icon: Lock,
-			color: 'var(--accent-primary)',
 			page: 'passwords' as const,
 		},
 	];
@@ -175,11 +183,7 @@ function formatTimeAgo(dateStr: string): string {
           >
             <template #actions>
               <div class="flex items-center gap-2">
-                <AppButton variant="secondary" size="sm" @click="store.navigate('api-keys')">
-                  <Fingerprint :size="13" />
-                  <span>API Keys</span>
-                </AppButton>
-                <AppButton variant="gold" size="sm" @click="store.navigate('passwords')">
+                <AppButton variant="gold" size="sm" @click="store.openCreateModal()">
                   <Plus :size="13" />
                   <span>New Credential</span>
                 </AppButton>
@@ -192,12 +196,13 @@ function formatTimeAgo(dateStr: string): string {
         <MotionStaggerItem>
           <Grid :cols="4" gap="sm">
             <motion.button
-              v-for="stat in stats"
+              v-for="(stat, i) in stats"
               :key="stat.label"
               type="button"
               @click="store.navigate(stat.page)"
               v-bind="cardInteraction"
-              class="a-glass a-glass--standard a-glass--interactive p-4 rounded-lg text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-border-focus)] transition-all"
+              class="a-glass a-glass--interactive p-4 rounded-lg text-left cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--gold-border-focus)] transition-all"
+              :class="i === 0 ? 'a-glass--gold' : 'a-glass--standard'"
             >
               <div class="flex items-center justify-between mb-2.5">
                 <div
@@ -212,10 +217,16 @@ function formatTimeAgo(dateStr: string): string {
                 <ArrowRight :size="12" class="opacity-0 group-hover:opacity-100 text-[var(--text-tertiary)] transition-opacity" />
               </div>
 
-              <p class="text-[24px] font-semibold tracking-tight leading-none text-[var(--text-primary)] font-mono">
+              <p
+                class="font-semibold tracking-tight leading-none text-[var(--text-primary)] font-mono"
+                :class="i === 0 ? 'text-[34px]' : 'text-[24px]'"
+              >
                 {{ stat.value }}
               </p>
-              <p class="text-[11px] font-medium text-[var(--text-tertiary)] mt-1.5">
+              <p
+                class="font-medium mt-1.5"
+                :class="i === 0 ? 'text-[12px] text-[var(--text-secondary)]' : 'text-[11px] text-[var(--text-tertiary)]'"
+              >
                 {{ stat.label }}
               </p>
             </motion.button>
@@ -300,8 +311,8 @@ function formatTimeAgo(dateStr: string): string {
                 </MotionStaggerItem>
               </MotionStagger>
 
-              <p class="text-[9px] mt-3 italic text-[var(--text-disabled)] text-center">
-                Synthetic activity demonstration — events stored in session memory
+              <p v-if="isDev" class="text-[9px] mt-3 italic text-[var(--text-disabled)] text-center">
+                Development preview — activity is synthetic and held in session memory
               </p>
             </Section>
           </Card>
@@ -320,10 +331,10 @@ function formatTimeAgo(dateStr: string): string {
                   </span>
                 </div>
 
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between gap-3">
                   <span class="text-[12px] text-[var(--text-secondary)]">Encryption</span>
-                  <span class="text-[11px] font-mono text-[var(--text-primary)]">
-                    AES-256-GCM
+                  <span class="text-[11px] text-right font-mono text-[var(--text-primary)]">
+                    Argon2id · XChaCha20-Poly1305
                   </span>
                 </div>
 
@@ -335,11 +346,15 @@ function formatTimeAgo(dateStr: string): string {
                 </div>
 
                 <div class="flex items-center justify-between">
-                  <span class="text-[12px] text-[var(--text-secondary)]">Auto-Lock Timer</span>
+                  <span class="text-[12px] text-[var(--text-secondary)]">Auto-Lock (device)</span>
                   <span class="text-[11px] tabular-nums font-mono text-[var(--text-primary)]">
-                    15 minutes
+                    {{ autoLockLabel }}
                   </span>
                 </div>
+                <p class="text-[10px] italic leading-relaxed text-[var(--text-disabled)]">
+                  Auto-lock here is a device-stored preference. The backend enforces its own idle
+                  window independently.
+                </p>
 
                 <div class="pt-3 border-t border-[var(--border-subtle)] space-y-2">
                   <button

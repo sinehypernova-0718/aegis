@@ -89,18 +89,18 @@
 [data-theme="dark"] {
 	color-scheme: dark;
 
-	/* Palette — graphite / charcoal with a subtle navy depth undertone */
-	--a-graphite-950: #0B0C0E;
-	--a-graphite-900: #111316;
+	/* Palette — Obsidian / Graphite / Slate with a champagne gold accent */
+	--a-graphite-950: #090B0D;
+	--a-graphite-900: #101316;
 	--a-graphite-850: #14171B;
-	--a-charcoal-800: #171A1E;
+	--a-charcoal-800: #15191D;
 	--a-charcoal-750: #1C1F24;
-	--a-charcoal-700: #20242A;
+	--a-charcoal-700: #222930;
 	--a-charcoal-650: #252A30;
 	--a-navy-undertone: #10161F;
-	--a-gold-500: #D6B36A;
-	--a-gold-300: #E8CD91;
-	--a-gold-700: #B58E45;
+	--a-gold-500: #C6A45C;
+	--a-gold-300: #E0C98F;
+	--a-gold-700: #A8873C;
 
 	/* Surfaces */
 	--surface-base: var(--a-graphite-950);
@@ -127,28 +127,28 @@
 	--border-focus: var(--a-gold-500);
 	--border-highlight: rgba(255, 255, 255, 0.06);
 
-	/* Accent — golden interactive accent */
+	/* Accent — champagne gold is the signature interactive accent */
 	--accent-primary: var(--a-gold-500);
 	--accent-hover: var(--a-gold-300);
 	--accent-active: var(--a-gold-700);
-	--accent-muted: rgba(214, 179, 106, 0.12);
-	--accent-border: rgba(214, 179, 106, 0.34);
-	--accent-glow: rgba(214, 179, 106, 0.22);
+	--accent-muted: rgba(198, 164, 92, 0.12);
+	--accent-border: rgba(198, 164, 92, 0.34);
+	--accent-glow: rgba(198, 164, 92, 0.22);
 
 	/* Golden highlights & surfaces */
 	--gold: var(--a-gold-500);
 	--gold-bright: var(--a-gold-300);
-	--gold-muted: rgba(214, 179, 106, 0.12);
-	--gold-border: rgba(214, 179, 106, 0.34);
-	--gold-border-focus: rgba(232, 205, 145, 0.75);
-	--gold-surface: rgba(214, 179, 106, 0.07);
-	--gold-glow: rgba(214, 179, 106, 0.22);
-	--gradient-gold: linear-gradient(135deg, #E8CD91 0%, #D6B36A 50%, #B58E45 100%);
-	--gradient-gold-hover: linear-gradient(135deg, #F0DDB2 0%, #E8CD91 50%, #C49A53 100%);
+	--gold-muted: rgba(198, 164, 92, 0.12);
+	--gold-border: rgba(198, 164, 92, 0.34);
+	--gold-border-focus: rgba(224, 201, 143, 0.75);
+	--gold-surface: rgba(198, 164, 92, 0.07);
+	--gold-glow: rgba(198, 164, 92, 0.22);
+	--gradient-gold: linear-gradient(135deg, #E7D3A4 0%, #C6A45C 50%, #A8873C 100%);
+	--gradient-gold-hover: linear-gradient(135deg, #F2E2BE 0%, #E0C98F 50%, #B08F43 100%);
 	--gradient-gold-subtle: linear-gradient(
 		135deg,
-		rgba(214, 179, 106, 0.16) 0%,
-		rgba(214, 179, 106, 0.04) 100%
+		rgba(198, 164, 92, 0.16) 0%,
+		rgba(198, 164, 92, 0.04) 100%
 	);
 	--text-on-gold: #0B0C0E;
 	--specular-rim: inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
@@ -183,11 +183,11 @@
 		0 40px 90px -24px hsl(var(--shadow-color) / 0.8), 0 0 0 1px rgba(255, 255, 255, 0.06);
 	--shadow-accent: 0 0 24px -6px var(--accent-glow);
 	--shadow-gold: 0 0 20px -6px var(--gold-glow);
-	--shadow-gold-elevated: 0 4px 16px -2px rgba(214, 179, 106, 0.28), 0 1px 3px 0 rgba(0, 0, 0, 0.6);
+	--shadow-gold-elevated: 0 4px 16px -2px rgba(198, 164, 92, 0.28), 0 1px 3px 0 rgba(0, 0, 0, 0.6);
 
 	/* Focus ring — golden */
 	--focus-ring: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--accent-primary);
-	--focus-ring-glow: 0 0 0 4px rgba(214, 179, 106, 0.32);
+	--focus-ring-glow: 0 0 0 4px rgba(198, 164, 92, 0.32);
 
 	/* Gradients — graphite with subtle navy undertone and gold whispers */
 	--gradient-app:
@@ -204,7 +204,7 @@
 		var(--gold-border) 78%,
 		transparent
 	);
-	--aurora-1: rgba(214, 179, 106, 0.10);
+	--aurora-1: rgba(198, 164, 92, 0.10);
 	--aurora-2: rgba(255, 255, 255, 0.04);
 	--aurora-3: rgba(20, 28, 40, 0.22);
 
@@ -226,7 +226,7 @@
 
 	/* Scrollbar / selection */
 	--scrollbar-thumb: rgba(255, 255, 255, 0.14);
-	--scrollbar-thumb-hover: rgba(214, 179, 106, 0.32);
+	--scrollbar-thumb-hover: rgba(198, 164, 92, 0.32);
 }
 /* ==========================================================================
    LIGHT THEME — Soft White / Pale Blue with restrained gold
@@ -234,68 +234,68 @@
 [data-theme="light"] {
 	color-scheme: light;
 
-	/* Palette */
+	/* Palette — Porcelain / Mist with antique-gold signature accent */
 	--a-white-950: #ffffff;
-	--a-bluewhite-50: #f4f8fe;
-	--a-bluewhite-100: #e9f1fb;
-	--a-bluewhite-200: #d9e7f8;
-	--a-blue-ink-900: #16305e;
-	--a-blue-ink-700: #2c4d85;
-	--a-blue-ink-500: #4a6da3;
-	--a-accent-600: #1d5fc2;
-	--a-accent-500: #2f74d6;
-	--a-accent-300: #7fa9ec;
-	--a-gold-600: #b98f3e;
-	--a-gold-400: #d8b46a;
+	--a-bluewhite-50: #f8fafd;
+	--a-bluewhite-100: #eaf1fa;
+	--a-bluewhite-200: #dbe7f4;
+	--a-blue-ink-900: #243d62;
+	--a-blue-ink-700: #33507a;
+	--a-blue-ink-500: #4e6e9c;
+	--a-accent-600: #b99142;
+	--a-accent-500: #c6a45c;
+	--a-accent-300: #e0c98f;
+	--a-gold-600: #b99142;
+	--a-gold-400: #c9a75c;
 
 	/* Surfaces */
-	--surface-base: #eef4fc;
+	--surface-base: #f1f5fb;
 	--surface-primary: #ffffff;
 	--surface-secondary: var(--a-bluewhite-50);
 	--surface-tertiary: var(--a-bluewhite-100);
 	--surface-elevated: #ffffff;
 	--surface-overlay: rgba(255, 255, 255, 0.85);
-	--surface-input: rgba(233, 241, 251, 0.75);
+	--surface-input: rgba(234, 241, 250, 0.75);
 
-	/* Text — deep / muted blues */
+	/* Text — deep navy ink */
 	--text-primary: var(--a-blue-ink-900);
 	--text-secondary: var(--a-blue-ink-700);
 	--text-tertiary: var(--a-blue-ink-500);
 	--text-disabled: #94aac9;
 	--text-inverse: #ffffff;
-	--text-on-accent: #ffffff;
+	--text-on-accent: #241a02;
 
 	/* Borders */
-	--border-subtle: rgba(47, 116, 214, 0.14);
-	--border-default: rgba(44, 77, 133, 0.2);
-	--border-strong: rgba(44, 77, 133, 0.34);
-	--border-focus: var(--a-accent-500);
+	--border-subtle: rgba(36, 61, 98, 0.14);
+	--border-default: rgba(36, 61, 98, 0.2);
+	--border-strong: rgba(36, 61, 98, 0.34);
+	--border-focus: var(--gold);
 	--border-highlight: rgba(255, 255, 255, 0.65);
 
-	/* Accent — darker blues for emphasis */
-	--accent-primary: var(--a-accent-600);
+	/* Accent — antique gold is the signature interactive accent (D1) */
+	--accent-primary: var(--a-gold-600);
 	--accent-hover: var(--a-accent-500);
-	--accent-active: #174e9f;
-	--accent-muted: rgba(47, 116, 214, 0.1);
-	--accent-border: rgba(47, 116, 214, 0.3);
-	--accent-glow: rgba(47, 116, 214, 0.25);
+	--accent-active: #9a7833;
+	--accent-muted: rgba(185, 143, 66, 0.12);
+	--accent-border: rgba(185, 143, 66, 0.34);
+	--accent-glow: rgba(185, 143, 66, 0.22);
 
-	/* Golden highlights & surfaces — restrained */
+	/* Golden highlights & surfaces */
 	--gold: var(--a-gold-600);
 	--gold-bright: var(--a-gold-400);
-	--gold-muted: rgba(185, 143, 62, 0.1);
-	--gold-border: rgba(185, 143, 62, 0.32);
-	--gold-border-focus: rgba(185, 143, 62, 0.7);
-	--gold-surface: rgba(185, 143, 62, 0.06);
-	--gold-glow: rgba(216, 180, 106, 0.28);
-	--gradient-gold: linear-gradient(135deg, #d8b46a 0%, #c99f48 50%, #b98f3e 100%);
-	--gradient-gold-hover: linear-gradient(135deg, #e2c179 0%, #d8b46a 50%, #a67f33 100%);
+	--gold-muted: rgba(185, 143, 66, 0.12);
+	--gold-border: rgba(185, 143, 66, 0.32);
+	--gold-border-focus: rgba(185, 143, 66, 0.7);
+	--gold-surface: rgba(185, 143, 66, 0.07);
+	--gold-glow: rgba(201, 167, 92, 0.28);
+	--gradient-gold: linear-gradient(135deg, #c9a75c 0%, #b99142 50%, #9a7833 100%);
+	--gradient-gold-hover: linear-gradient(135deg, #d8bb72 0%, #c6a45c 50%, #8a6b2b 100%);
 	--gradient-gold-subtle: linear-gradient(
 		135deg,
-		rgba(185, 143, 62, 0.14) 0%,
-		rgba(185, 143, 62, 0.03) 100%
+		rgba(185, 143, 66, 0.14) 0%,
+		rgba(185, 143, 66, 0.03) 100%
 	);
-	--text-on-gold: #16305e;
+	--text-on-gold: #241a02;
 	--specular-rim: inset 0 1px 0 0 rgba(255, 255, 255, 0.85);
 	--specular-rim-subtle: inset 0 1px 0 0 rgba(255, 255, 255, 0.55);
 	--specular-rim-gold: inset 0 1px 0 0 rgba(255, 255, 255, 0.65);
@@ -328,11 +328,11 @@
 	--shadow-accent: 0 0 22px -8px var(--accent-glow);
 	--shadow-gold: 0 0 18px -8px var(--gold-glow);
 	--shadow-gold-elevated:
-		0 4px 14px -2px rgba(185, 143, 62, 0.28), 0 1px 3px 0 rgba(22, 48, 94, 0.14);
+		0 4px 14px -2px rgba(185, 143, 66, 0.28), 0 1px 3px 0 rgba(36, 61, 98, 0.14);
 
-	/* Focus ring */
+	/* Focus ring — cases to the signature gold */
 	--focus-ring: 0 0 0 2px var(--surface-base), 0 0 0 4px var(--accent-primary);
-	--focus-ring-glow: 0 0 0 4px rgba(47, 116, 214, 0.3);
+	--focus-ring-glow: 0 0 0 4px rgba(185, 143, 66, 0.3);
 
 	/* Gradients — subtle light-blue washes */
 	--gradient-app:
@@ -360,8 +360,9 @@
 	--warning-muted: rgba(180, 83, 9, 0.09);
 	--danger: #c2373b;
 	--danger-muted: rgba(194, 55, 59, 0.08);
-	--info: var(--a-accent-600);
-	--info-muted: var(--accent-muted);
+	/* Information stays blue and is deliberately NOT the signature accent. */
+	--info: #2c4d85;
+	--info-muted: rgba(44, 77, 133, 0.1);
 
 	/* Credential-type accents */
 	--type-password: #5b6fd0;

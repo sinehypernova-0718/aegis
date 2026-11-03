@@ -10,13 +10,16 @@ defineProps<{
 
 <template>
   <div class="flex items-start justify-between gap-4 mb-5">
-    <div class="min-w-0 flex-1">
-      <h2 class="text-[20px] font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
-        {{ title }}
-      </h2>
-      <p v-if="subtitle" class="text-[12px] text-[var(--text-tertiary)] mt-1">
-        {{ subtitle }}
-      </p>
+    <div class="flex items-center gap-3 min-w-0 flex-1">
+      <slot name="leading" />
+      <div class="min-w-0">
+        <h2 class="text-[20px] font-semibold tracking-tight text-[var(--text-primary)] leading-tight">
+          {{ title }}
+        </h2>
+        <p v-if="subtitle" class="text-[12px] text-[var(--text-tertiary)] mt-1">
+          {{ subtitle }}
+        </p>
+      </div>
     </div>
     <div v-if="$slots.actions" class="flex items-center gap-1.5 shrink-0">
       <slot name="actions" />

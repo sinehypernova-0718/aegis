@@ -30,47 +30,65 @@ assert.ok(
 	'CredentialList must use AppBadge for item kind badges',
 );
 
-// Test 2: Secret visibility interaction and security hygiene
+// Test 2: Secret visibility interaction and security hygiene.
+// The security lifecycle now lives in the dedicated SecretField primitive
+// (design spec §5.3), so the assertions target that component.
 console.log('Test 2: Secret reveal/conceal security hygiene');
+const secretFieldPath = resolve(__dirname, '../src/components/vault/detail/SecretField.vue');
+const secretFieldContent = readFileSync(secretFieldPath, 'utf8');
 assert.ok(
-	credentialListContent.includes('revealedId === store.selectedCredential.id'),
-	'Secret must only render when revealedId matches selected credential ID',
+	secretFieldContent.includes('revealed'),
+	'SecretField must gate rendering on an explicit reveal state',
 );
 assert.ok(
-	credentialListContent.includes('••••••••••••••••••••••••'),
+	secretFieldContent.includes('••••••••••••••••••••••••'),
 	'Concealed state must show masked placeholder without rendering actual secret in DOM',
 );
 assert.ok(
-	credentialListContent.includes('autoConcealTimer'),
+	secretFieldContent.includes('autoConcealTimer'),
 	'Secret visibility must support auto-conceal timeout for security',
 );
 assert.ok(
-	credentialListContent.includes('blur(4px)'),
+	secretFieldContent.includes('blur(4px)'),
 	'Secret reveal must provide smooth blur transition without disruptive layout shift',
 );
 
-// Test 3: Type-specific metadata detail blocks
-console.log('Test 3: Type-specific metadata detail blocks (OAuth2, SSH, API Key, Note)');
+// Test 3: Type-specific metadata detail components
+console.log('Test 3: Type-specific metadata detail components (OAuth2, SSH, API Key, Note)');
+const detailDir = resolve(__dirname, '../src/components/vault/detail');
+const apiKeyDetailContent = readFileSync(resolve(detailDir, 'ApiKeyDetail.vue'), 'utf8');
+const sshKeyDetailContent = readFileSync(resolve(detailDir, 'SshKeyDetail.vue'), 'utf8');
+const oauth2DetailContent = readFileSync(resolve(detailDir, 'OAuth2Detail.vue'), 'utf8');
+const secureNoteDetailContent = readFileSync(resolve(detailDir, 'SecureNoteDetail.vue'), 'utf8');
+
 assert.ok(
-	credentialListContent.includes('OAuth2 Client Configuration') ||
-		credentialListContent.includes('oauth2Metadata'),
+	oauth2DetailContent.includes('OAuth2 Client Configuration'),
 	'Detail view must provide dedicated OAuth2 metadata rendering',
 );
 assert.ok(
-	credentialListContent.includes('SSH Key Specifications') ||
-		credentialListContent.includes('sshKeyMetadata'),
+	sshKeyDetailContent.includes('SSH Key Specifications'),
 	'Detail view must provide dedicated SSH key metadata rendering',
 );
 assert.ok(
-	credentialListContent.includes('API Configuration & Telemetry') ||
-		credentialListContent.includes('apiKeyMetadata'),
+	apiKeyDetailContent.includes('API Configuration'),
 	'Detail view must provide dedicated API Key / Access Token telemetry rendering',
 );
 assert.ok(
-	credentialListContent.includes('Secure Note Properties') ||
-		credentialListContent.includes('secureNoteMetadata'),
+	secureNoteDetailContent.includes('Secure Note Properties'),
 	'Detail view must provide dedicated Secure Note metadata rendering',
 );
+for (const component of [
+	'<SecretField',
+	'<ApiKeyDetail',
+	'<SshKeyDetail',
+	'<OAuth2Detail',
+	'<SecureNoteDetail',
+]) {
+	assert.ok(
+		credentialListContent.includes(component),
+		`CredentialList must delegate detail rendering to ${component}>`,
+	);
+}
 
 // Test 4: ModalShell integration and Dialog confirmation
 console.log('Test 4: ModalShell and AppDialog confirmation integration');

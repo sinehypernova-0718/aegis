@@ -56,8 +56,8 @@ Aegis feels like an atmospheric, purpose-built security instrument: layered tran
 ### Themes
 
 Applied via `<html data-theme="light|dark">`; all colors resolve through semantic tokens so components never hardcode palette values.
-- **Light — "Glacier":** soft white/pale-blue backgrounds (`#eef4fc` base), layered blue-white surfaces, deep muted-blue ink (`--a-blue-ink-900 #16305e`), darker-blue accents (`--a-blue-500/400`), restrained gold hairlines (`--a-gold-600 #b98f3e`), delicate shadows, translucent light glass.
-- **Dark — "Midnight":** deep navy backgrounds (`#050a18` base), midnight-blue surface tiers, blue-tinted glass (`--glass-bg rgba(18,34,74,.55)` etc.), cool-blue accent lighting (`--a-blue-400 #6aa5ff`), controlled gold highlights (`--a-gold-500 #d9b36a`, `--gold-border`, `--shadow-gold`), high-contrast text.
+- **Light — "Porcelain":** porcelain/mist backgrounds (`#f1f5fb` base), white and `#f8fafd` surfaces, navy ink (`--a-blue-ink-900 #243d62`), and **antique gold as the signature accent** (`--a-gold-600 #b99142`). Blue is reserved for informational states (`--info #2c4d85`).
+- **Dark — "Obsidian":** obsidian/graphite backgrounds (`#090b0d` base), graphite surface tiers, champagne gold as the signature accent (`--a-gold-500 #c6a45c`), gold focus rings and highlights, high-contrast warm-neutral text.
 
 ### Theme Switching
 
