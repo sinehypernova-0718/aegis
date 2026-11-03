@@ -455,7 +455,10 @@ export const useVaultStore = defineStore('vault', () => {
 				nextCredentialCursor = undefined;
 				hasMoreCredentials.value = false;
 			}
-			await refreshCredentialCounts();
+			// Exact per-kind counts are derived by decrypting all records. Keep that
+			// vault-wide scan out of the first-page loading path so the credential
+			// workspace becomes ready as soon as its bounded page arrives.
+			void refreshCredentialCounts();
 		} catch {
 			if (requestId === credentialRequestId) error.value = 'Failed to load credentials';
 		} finally {

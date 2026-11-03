@@ -44,6 +44,7 @@ describe('vault store credential counts', () => {
 
 		const store = useVaultStore();
 		await store.loadAll();
+		await vi.waitFor(() => expect(store.credentialCountsLoaded).toBe(true));
 
 		expect(store.credentials).toHaveLength(1);
 		expect(store.hasMoreCredentials).toBe(true);
@@ -52,5 +53,49 @@ describe('vault store credential counts', () => {
 		expect(store.status.passwordCount).toBe(101);
 		expect(store.status.apiKeyCount).toBe(52);
 		expect(store.credentialCountsLoaded).toBe(true);
+	});
+
+	it('finishes first-page loading while exact aggregate counts are still running', async () => {
+		let resolveCounts!: (counts: {
+			credentialCount: number;
+			passwordCount: number;
+			apiKeyCount: number;
+			tokenCount: number;
+			sshKeyCount: number;
+			oauth2Count: number;
+			secureNoteCount: number;
+		}) => void;
+		const counts = new Promise<{
+			credentialCount: number;
+			passwordCount: number;
+			apiKeyCount: number;
+			tokenCount: number;
+			sshKeyCount: number;
+			oauth2Count: number;
+			secureNoteCount: number;
+		}>((resolve) => {
+			resolveCounts = resolve;
+		});
+		setVaultClient({
+			listCredentialPage: async () => ({ items: [], nextCursor: null }),
+			getCredentialCounts: () => counts,
+		} as unknown as VaultClient);
+
+		const store = useVaultStore();
+		await store.loadAll();
+
+		expect(store.isLoading).toBe(false);
+		expect(store.credentialCountsLoading).toBe(true);
+
+		resolveCounts({
+			credentialCount: 0,
+			passwordCount: 0,
+			apiKeyCount: 0,
+			tokenCount: 0,
+			sshKeyCount: 0,
+			oauth2Count: 0,
+			secureNoteCount: 0,
+		});
+		await vi.waitFor(() => expect(store.credentialCountsLoaded).toBe(true));
 	});
 });

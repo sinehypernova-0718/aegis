@@ -11,7 +11,7 @@
  *  - Locking clears sensitive store state immediately; the visual exit is a
  *    pure presentation layer and never gates the security operation.
  */
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { AnimatePresence, motion } from 'motion-v';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useTheme } from '@/composables/useTheme';
@@ -21,23 +21,26 @@ import { isDesignSystemRoute } from '@/types';
 
 // Features
 import UnlockView from '@/features/vault/UnlockView.vue';
-import OverviewView from '@/features/overview/OverviewView.vue';
-import PasswordsView from '@/features/passwords/PasswordsView.vue';
-import ApiKeysView from '@/features/apikeys/ApiKeysView.vue';
-import SshKeysView from '@/features/sshkeys/SshKeysView.vue';
-import OAuth2View from '@/features/oauth2/OAuth2View.vue';
-import SecureNotesView from '@/features/securenotes/SecureNotesView.vue';
-import SecurityView from '@/features/security/SecurityView.vue';
-import SettingsView from '@/features/settings/SettingsView.vue';
 
 // Layout
 import AppSidebar from '@/components/layout/AppSidebar.vue';
 import AppToasts from '@/components/ui/AppToasts.vue';
 import CreateCredentialModal from '@/components/vault/CreateCredentialModal.vue';
 
-// Design-system showcase (Phase 1 review surface — hash route only, never
-// renders vault data and is not part of the application navigation model).
-import DesignSystemPreview from '@/design-system/DesignSystemPreview.vue';
+const OverviewView = defineAsyncComponent(() => import('@/features/overview/OverviewView.vue'));
+const PasswordsView = defineAsyncComponent(() => import('@/features/passwords/PasswordsView.vue'));
+const ApiKeysView = defineAsyncComponent(() => import('@/features/apikeys/ApiKeysView.vue'));
+const SshKeysView = defineAsyncComponent(() => import('@/features/sshkeys/SshKeysView.vue'));
+const OAuth2View = defineAsyncComponent(() => import('@/features/oauth2/OAuth2View.vue'));
+const SecureNotesView = defineAsyncComponent(
+	() => import('@/features/securenotes/SecureNotesView.vue'),
+);
+const SecurityView = defineAsyncComponent(() => import('@/features/security/SecurityView.vue'));
+const SettingsView = defineAsyncComponent(() => import('@/features/settings/SettingsView.vue'));
+// Load the isolated design-system preview only when its hash route is opened.
+const DesignSystemPreview = defineAsyncComponent(
+	() => import('@/design-system/DesignSystemPreview.vue'),
+);
 
 const store = useVaultStore();
 const { initTheme } = useTheme();

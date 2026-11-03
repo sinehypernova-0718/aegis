@@ -681,7 +681,6 @@ async function handleDelete() {
     border-color var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
     box-shadow var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)),
     transform var(--duration-fast, 120ms) var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
-  will-change: transform;
 }
 .credential-row:hover {
   transform: translateY(-1px);

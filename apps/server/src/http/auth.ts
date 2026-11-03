@@ -71,6 +71,7 @@ export class UnlockThrottle {
 	#failures = 0;
 	#windowStart = 0;
 	#blockedUntil = 0;
+	#attemptInProgress = false;
 
 	constructor(config: UnlockThrottleConfig, now: () => number = Date.now) {
 		if (config.maxFailures < 1) throw new RangeError('maxFailures must be at least 1');
@@ -88,6 +89,21 @@ export class UnlockThrottle {
 	get retryAfterMs(): number {
 		this.#settle();
 		return Math.max(0, this.#blockedUntil - this.#now());
+	}
+
+	/**
+	 * Bound expensive unlock/recovery derivations to one process-wide attempt.
+	 * The check and set are synchronous, so concurrent HTTP handlers cannot both
+	 * acquire the slot on the JavaScript event loop.
+	 */
+	tryStartAttempt(): boolean {
+		if (this.blocked || this.#attemptInProgress) return false;
+		this.#attemptInProgress = true;
+		return true;
+	}
+
+	finishAttempt(): void {
+		this.#attemptInProgress = false;
 	}
 
 	recordFailure(): void {
