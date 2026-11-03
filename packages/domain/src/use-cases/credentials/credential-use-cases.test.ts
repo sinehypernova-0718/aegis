@@ -107,6 +107,9 @@ describe('credential use cases', () => {
 	it('updates with a fresh nonce', async () => {
 		const s = await setup();
 		const created = await s.create.execute({ vaultId: s.vaultId, payload: credential });
+		const createdRow = s.credentialRepository.records.get(created.id);
+		const originalCreatedAt = createdRow?.createdAt;
+		const originalUpdatedAt = createdRow?.updatedAt;
 		const noncesBefore = s.crypto.nonces.length;
 
 		const updated = await s.update.execute({
@@ -116,6 +119,9 @@ describe('credential use cases', () => {
 		});
 		expect(updated.payload.secret).toBe('NEW_SECRET_MARKER_1234');
 		expect(s.crypto.nonces.length).toBeGreaterThan(noncesBefore);
+		const updatedRow = s.credentialRepository.records.get(created.id);
+		expect(updatedRow?.createdAt).toBe(originalCreatedAt);
+		expect(updatedRow?.updatedAt).not.toBe(originalUpdatedAt);
 
 		const fetched = await s.get.execute({ vaultId: s.vaultId, id: created.id });
 		expect(fetched.payload.secret).toBe('NEW_SECRET_MARKER_1234');

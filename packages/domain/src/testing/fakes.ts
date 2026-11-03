@@ -233,7 +233,7 @@ export class InMemoryCredentialRepository implements CredentialRepositoryPort {
 		if (this.failUpdate) throw namedError('DatabaseError');
 		const existing = this.records.get(input.id);
 		if (!existing || existing.vaultId !== input.vaultId) throw namedError('RecordNotFoundError');
-		const row: CredentialRecordRow = { ...input };
+		const row: CredentialRecordRow = { ...input, createdAt: existing.createdAt };
 		this.records.set(row.id, row);
 		return row;
 	}
