@@ -17,7 +17,7 @@ describe('getAnchoredPanelStyle', () => {
 	it('flips above the trigger and clamps the panel to the viewport edges', () => {
 		expect(
 			getAnchoredPanelStyle(
-				{ left: 290, right: 350, top: 100, bottom: 130, width: 60 },
+				{ left: 290, right: 350, top: 100, bottom: 140, width: 60 },
 				100,
 				viewport,
 			),

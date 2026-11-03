@@ -166,7 +166,10 @@ const protections = [
             <KeyValue label="Unlocked">
               <span class="text-[11px] tabular-nums text-[var(--text-primary)]">
                 {{ store.status.lastUnlockedAt
-                    ? formatRelativeTime(store.status.lastUnlockedAt, { compact: true }) + ' ago'
+                    ? formatRelativeTime(store.status.lastUnlockedAt, {
+                        compact: true,
+                        includeAgo: true,
+                      })
                     : '—' }}
               </span>
             </KeyValue>

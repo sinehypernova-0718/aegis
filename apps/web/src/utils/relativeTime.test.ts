@@ -23,11 +23,31 @@ describe('formatRelativeTime', () => {
 	});
 
 	it('keeps compact labels without a suffix or calendar-date fallback', () => {
+		expect(
+			formatRelativeTime(timestampMinutesAgo(0), { compact: true, now: NOW }),
+		).toBe('just now');
 		expect(formatRelativeTime(timestampMinutesAgo(2), { compact: true, now: NOW })).toBe('2m');
 		expect(formatRelativeTime(timestampMinutesAgo(25 * 60), { compact: true, now: NOW })).toBe('1d');
 		expect(formatRelativeTime(timestampMinutesAgo(30 * 24 * 60), { compact: true, now: NOW })).toBe(
 			'30d',
 		);
+	});
+
+	it('adds an ago suffix to compact labels without changing the just-now label', () => {
+		expect(
+			formatRelativeTime(timestampMinutesAgo(0), {
+				compact: true,
+				includeAgo: true,
+				now: NOW,
+			}),
+		).toBe('just now');
+		expect(
+			formatRelativeTime(timestampMinutesAgo(2), {
+				compact: true,
+				includeAgo: true,
+				now: NOW,
+			}),
+		).toBe('2m ago');
 	});
 
 	it('treats future timestamps as just now', () => {
