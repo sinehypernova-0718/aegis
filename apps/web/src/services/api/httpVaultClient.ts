@@ -169,6 +169,13 @@ interface UiPayloadFields {
 	oauth2Metadata?: ApiCredentialPayload['oauth2Metadata'] | undefined;
 }
 
+/** Native date inputs return YYYY-MM-DD, while the API stores UTC timestamps. */
+function toApiTimestamp(value: string | undefined): string | undefined {
+	if (value === undefined || value === '') return undefined;
+	if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return `${value}T00:00:00.000Z`;
+	return value;
+}
+
 function toApiPayload(
 	api: ApiCredentialKind,
 	payload: UiPayloadFields,
@@ -182,8 +189,14 @@ function toApiPayload(
 			url: payload.url,
 			notes: payload.notes,
 			tags: payload.tags ?? [],
-			expiresAt: payload.expiresAt,
-			oauth2Metadata: payload.oauth2Metadata,
+			expiresAt: toApiTimestamp(payload.expiresAt),
+			oauth2Metadata:
+				payload.oauth2Metadata === undefined
+					? undefined
+					: omitUndefined({
+							...payload.oauth2Metadata,
+							expiresAt: toApiTimestamp(payload.oauth2Metadata.expiresAt),
+						}),
 		}),
 	};
 }
