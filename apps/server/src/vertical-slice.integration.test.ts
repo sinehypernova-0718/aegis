@@ -7,7 +7,7 @@ import { createDatabaseClient, vaultKeyEnvelopes, vaultRecords, vaults } from '@
 import {
 	CredentialDecryptionError,
 	CredentialNotFoundError,
-	InvalidCredentialPayloadError,
+	InvalidStoredCredentialPayloadError,
 	UnlockRejectedError,
 	UnsupportedEncryptionFormatError,
 	VaultLockedError,
@@ -40,8 +40,12 @@ describe.skipIf(!databaseUrl)('vault vertical slice (real crypto + domain + Post
 		if (createdVaultIds.length === 0) return;
 		const client = createDatabaseClient({ connectionString: databaseUrl as string });
 		try {
-			await client.database.delete(vaultKeyEnvelopes).where(inArray(vaultKeyEnvelopes.vaultId, createdVaultIds));
-			await client.database.delete(vaultRecords).where(inArray(vaultRecords.vaultId, createdVaultIds));
+			await client.database
+				.delete(vaultKeyEnvelopes)
+				.where(inArray(vaultKeyEnvelopes.vaultId, createdVaultIds));
+			await client.database
+				.delete(vaultRecords)
+				.where(inArray(vaultRecords.vaultId, createdVaultIds));
 			await client.database.delete(vaults).where(inArray(vaults.id, createdVaultIds));
 		} finally {
 			await client.close();
@@ -239,7 +243,7 @@ describe.skipIf(!databaseUrl)('vault vertical slice (real crypto + domain + Post
 				session.dispose();
 				await expect(
 					container.getCredential.execute({ vaultId, id: bogusId }),
-				).rejects.toBeInstanceOf(InvalidCredentialPayloadError);
+				).rejects.toBeInstanceOf(InvalidStoredCredentialPayloadError);
 
 				// Wrong passphrase after locking.
 				await container.lockVault.execute({ vaultId });
