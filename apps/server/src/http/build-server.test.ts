@@ -1,13 +1,10 @@
 import { Writable } from 'node:stream';
+import { PersistenceError, VaultAlreadyInitializedError, VaultLockedError } from '@aegis/domain';
 import type { FastifyInstance, FastifyServerOptions } from 'fastify';
 import { describe, expect, it } from 'vitest';
-import { PersistenceError, VaultAlreadyInitializedError, VaultLockedError } from '@aegis/domain';
-
-import { buildServer } from './build-server.js';
-import { UnlockThrottle } from './auth.js';
-import type { AppContainer } from './dependencies.js';
 import {
 	CREDENTIAL_ID,
+	createFakeContainer,
 	TEST_API_TOKEN,
 	TEST_CORRECT_PASSPHRASE,
 	TEST_NOTE_MARKER,
@@ -15,8 +12,10 @@ import {
 	TEST_SECRET_MARKER,
 	TEST_VAULT_ID,
 	TEST_WRONG_PASSPHRASE,
-	createFakeContainer,
 } from '../testing/fakes.js';
+import { UnlockThrottle } from './auth.js';
+import { buildServer } from './build-server.js';
+import type { AppContainer } from './dependencies.js';
 
 const PORT = 7_787;
 const AUTH = `Bearer ${TEST_API_TOKEN}`;
@@ -379,6 +378,32 @@ describe('server boundary: vault routes', () => {
 			payload: { passphrase: TEST_CORRECT_PASSPHRASE },
 		});
 		expect(recovered.statusCode).toBe(200);
+		await app.close();
+	});
+});
+
+describe('server boundary: credential count route', () => {
+	it('returns validated aggregate counts for an unlocked vault', async () => {
+		const { app } = makeApp();
+		await inject(app, {
+			method: 'POST',
+			url: '/vaults',
+			payload: { passphrase: 'a passphrase' },
+		});
+		const response = await inject(app, {
+			method: 'GET',
+			url: `/vaults/${TEST_VAULT_ID}/credential-counts`,
+		});
+		expect(response.statusCode).toBe(200);
+		expect(response.json()).toEqual({
+			credentialCount: 0,
+			passwordCount: 0,
+			apiKeyCount: 0,
+			tokenCount: 0,
+			sshKeyCount: 0,
+			oauth2Count: 0,
+			secureNoteCount: 0,
+		});
 		await app.close();
 	});
 });

@@ -1,17 +1,18 @@
-import type { FastifyInstance } from 'fastify';
 import {
 	CreateCredentialRequestSchema,
 	CreateCredentialResponseSchema,
+	CredentialCountsSchema,
 	CredentialDetailSchema,
 	CredentialParamsSchema,
 	DeleteCredentialResponseSchema,
 	ListCredentialsQuerySchema,
+	type ListCredentialsResponse,
 	ListCredentialsResponseSchema,
 	UpdateCredentialRequestSchema,
 	UpdateCredentialResponseSchema,
 	VaultIdParamsSchema,
-	type ListCredentialsResponse,
 } from '@aegis/contracts';
+import type { FastifyInstance } from 'fastify';
 
 import type { AppContainer } from '../dependencies.js';
 import {
@@ -28,6 +29,7 @@ export interface CredentialRouteDeps {
 	readonly container: Pick<
 		AppContainer,
 		| 'createCredential'
+		| 'getCredentialCounts'
 		| 'getCredential'
 		| 'listCredentials'
 		| 'updateCredential'
@@ -37,6 +39,16 @@ export interface CredentialRouteDeps {
 }
 
 export function registerCredentialRoutes(app: FastifyInstance, deps: CredentialRouteDeps): void {
+	app.get(
+		'/vaults/:vaultId/credential-counts',
+		{ preHandler: deps.authenticate },
+		async (request, reply) => {
+			const params = parseRequest(VaultIdParamsSchema, request.params);
+			const result = await deps.container.getCredentialCounts.execute({ vaultId: params.vaultId });
+			return reply.code(200).send(CredentialCountsSchema.parse(result));
+		},
+	);
+
 	app.post(
 		'/vaults/:vaultId/credentials',
 		{ preHandler: deps.authenticate },

@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import type { DatabaseClient } from '@aegis/database';
 import {
 	CredentialNotFoundError,
@@ -7,6 +6,7 @@ import {
 	type CredentialView,
 	UnlockRejectedError,
 } from '@aegis/domain';
+import type { FastifyInstance } from 'fastify';
 
 import { LOOPBACK_HOST, type ServerConfig } from '../config.js';
 import type { AppContainer } from '../http/dependencies.js';
@@ -136,6 +136,47 @@ export function createFakeContainer(): FakeContainer {
 					status: state.unlocked ? 'unlocked' : 'locked',
 					vaultId: input.vaultId,
 				};
+			},
+		},
+		getCredentialCounts: {
+			async execute() {
+				const counts = {
+					credentialCount: 0,
+					passwordCount: 0,
+					apiKeyCount: 0,
+					tokenCount: 0,
+					sshKeyCount: 0,
+					oauth2Count: 0,
+					secureNoteCount: 0,
+				};
+				for (const credential of state.credentials.values()) {
+					counts.credentialCount += 1;
+					switch (credential.payload.type) {
+						case 'password':
+							counts.passwordCount += 1;
+							break;
+						case 'api_key':
+							counts.apiKeyCount += 1;
+							break;
+						case 'access_token':
+						case 'refresh_token':
+							counts.apiKeyCount += 1;
+							counts.tokenCount += 1;
+							break;
+						case 'ssh_key':
+							counts.sshKeyCount += 1;
+							break;
+						case 'oauth2':
+							counts.oauth2Count += 1;
+							break;
+						case 'secure_note':
+						case 'certificate':
+						case 'recovery_code':
+							counts.secureNoteCount += 1;
+							break;
+					}
+				}
+				return counts;
 			},
 		},
 		createCredential: {

@@ -1,3 +1,23 @@
+export const DOMAIN_ERROR_CODES = [
+	'DOMAIN_INVALID_VAULT_INPUT',
+	'DOMAIN_VAULT_ALREADY_INITIALIZED',
+	'DOMAIN_VAULT_NOT_FOUND',
+	'DOMAIN_VAULT_LOCKED',
+	'DOMAIN_VAULT_ALREADY_UNLOCKED',
+	'DOMAIN_SESSION_REGISTRATION_CONFLICT',
+	'DOMAIN_UNLOCK_REJECTED',
+	'DOMAIN_INVALID_KEY_ENVELOPE',
+	'DOMAIN_UNSUPPORTED_ENCRYPTION_FORMAT',
+	'DOMAIN_CREDENTIAL_NOT_FOUND',
+	'DOMAIN_INVALID_CREDENTIAL_PAYLOAD',
+	'DOMAIN_CREDENTIAL_DECRYPTION_FAILED',
+	'DOMAIN_INVALID_PAGINATION',
+	'DOMAIN_INVALID_CURSOR',
+	'DOMAIN_PERSISTENCE_FAILED',
+] as const;
+
+export type DomainErrorCode = (typeof DOMAIN_ERROR_CODES)[number];
+
 /**
  * Base class for typed domain errors. The server translates the stable domain
  * code into a transport error at the HTTP boundary. Domain error messages never
@@ -7,9 +27,9 @@
  * responses or unsafe logs.
  */
 export class DomainError extends Error {
-	readonly code: string;
+	readonly code: DomainErrorCode;
 
-	constructor(message: string, code: string, options?: ErrorOptions) {
+	constructor(message: string, code: DomainErrorCode, options?: ErrorOptions) {
 		super(message, options);
 		this.name = this.constructor.name;
 		this.code = code;

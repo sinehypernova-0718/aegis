@@ -10,6 +10,7 @@ import type {
 	CreateCredentialInput,
 	CredentialDetail,
 	CredentialFilters,
+	CredentialKind,
 	CredentialSummary,
 	PageId,
 	UpdateCredentialInput,
@@ -37,6 +38,9 @@ export const useVaultStore = defineStore('vault', () => {
 	const initError = ref<string | null>(null);
 
 	const credentials = ref<CredentialSummary[]>([]);
+	const credentialCountsLoaded = ref(false);
+	const credentialCountsLoading = ref(false);
+	const hasBackendCredentialCounts = ref(false);
 	const passwords = computed(() =>
 		credentials.value.filter((credential) => credential.kind === 'password'),
 	);
@@ -69,6 +73,7 @@ export const useVaultStore = defineStore('vault', () => {
 	const reconciliationError = ref<string | null>(null);
 	const recoveryKeyPresented = ref<string | null>(null);
 	const currentPage = ref<PageId>('overview');
+	let credentialCountsRequestId = 0;
 	// Global, centralized credential-creation modal. Any surface (sidebar,
 	// overview, a credential list) can request it without navigating away.
 	const createModalOpen = ref(false);
@@ -85,6 +90,57 @@ export const useVaultStore = defineStore('vault', () => {
 	const isLocked = computed(
 		() => !isInitializing.value && !initError.value && status.value.state === 'locked',
 	);
+
+	async function refreshCredentialCounts(): Promise<void> {
+		const requestId = ++credentialCountsRequestId;
+		if (!activeClient.getCredentialCounts) {
+			hasBackendCredentialCounts.value = false;
+			credentialCountsLoaded.value = !activeClient.listCredentialPage;
+			credentialCountsLoading.value = false;
+			return;
+		}
+		credentialCountsLoading.value = true;
+		try {
+			const counts = await activeClient.getCredentialCounts();
+			if (requestId !== credentialCountsRequestId) return;
+			status.value = { ...status.value, ...counts };
+			hasBackendCredentialCounts.value = true;
+			credentialCountsLoaded.value = true;
+		} catch {
+			if (requestId !== credentialCountsRequestId) return;
+			hasBackendCredentialCounts.value = false;
+			credentialCountsLoaded.value = false;
+		} finally {
+			if (requestId === credentialCountsRequestId) credentialCountsLoading.value = false;
+		}
+	}
+
+	function adjustCredentialCounts(kind: CredentialKind, delta: number): void {
+		if (!hasBackendCredentialCounts.value) return;
+		const current = status.value;
+		status.value = {
+			...current,
+			credentialCount: Math.max(0, (current.credentialCount ?? 0) + delta),
+			...(kind === 'password'
+				? { passwordCount: Math.max(0, (current.passwordCount ?? 0) + delta) }
+				: {}),
+			...(kind === 'api-key' || kind === 'access-token'
+				? { apiKeyCount: Math.max(0, (current.apiKeyCount ?? 0) + delta) }
+				: {}),
+			...(kind === 'access-token'
+				? { tokenCount: Math.max(0, (current.tokenCount ?? 0) + delta) }
+				: {}),
+			...(kind === 'ssh-key'
+				? { sshKeyCount: Math.max(0, (current.sshKeyCount ?? 0) + delta) }
+				: {}),
+			...(kind === 'oauth2'
+				? { oauth2Count: Math.max(0, (current.oauth2Count ?? 0) + delta) }
+				: {}),
+			...(kind === 'secure-note'
+				? { secureNoteCount: Math.max(0, (current.secureNoteCount ?? 0) + delta) }
+				: {}),
+		};
+	}
 
 	function applyFilters(items: CredentialSummary[]): CredentialSummary[] {
 		return items
@@ -337,6 +393,10 @@ export const useVaultStore = defineStore('vault', () => {
 
 		// Immediate reactive state hygiene: scrub cached credentials and keys from frontend memory
 		credentials.value = [];
+		credentialCountsRequestId += 1;
+		credentialCountsLoaded.value = false;
+		credentialCountsLoading.value = false;
+		hasBackendCredentialCounts.value = false;
 		nextCredentialCursor = undefined;
 		hasMoreCredentials.value = false;
 		selectedCredential.value = null;
@@ -371,6 +431,10 @@ export const useVaultStore = defineStore('vault', () => {
 
 	async function loadAll() {
 		isLoading.value = true;
+		credentialCountsRequestId += 1;
+		credentialCountsLoaded.value = false;
+		credentialCountsLoading.value = false;
+		hasBackendCredentialCounts.value = false;
 		try {
 			if (activeClient.listCredentialPage) {
 				const page = await activeClient.listCredentialPage();
@@ -382,6 +446,7 @@ export const useVaultStore = defineStore('vault', () => {
 				nextCredentialCursor = undefined;
 				hasMoreCredentials.value = false;
 			}
+			await refreshCredentialCounts();
 		} catch {
 			error.value = 'Failed to load credentials';
 		} finally {
@@ -434,6 +499,8 @@ export const useVaultStore = defineStore('vault', () => {
 		try {
 			const summary = await activeClient.createCredential(input);
 			credentials.value = [summary, ...credentials.value];
+			if (credentialCountsLoaded.value) adjustCredentialCounts(summary.kind, 1);
+			else await refreshCredentialCounts();
 			notify({ type: 'success', title: 'Credential created' });
 			return summary;
 		} catch {
@@ -454,6 +521,7 @@ export const useVaultStore = defineStore('vault', () => {
 			if (selectedCredential.value?.id === id) {
 				selectedCredential.value = { ...selectedCredential.value, ...summary } as CredentialDetail;
 			}
+			if (!credentialCountsLoaded.value) await refreshCredentialCounts();
 			notify({ type: 'success', title: 'Credential updated' });
 			return summary;
 		} catch {
@@ -464,9 +532,14 @@ export const useVaultStore = defineStore('vault', () => {
 
 	async function deleteCredential(id: string) {
 		try {
+			const existing =
+				credentials.value.find((credential) => credential.id === id) ??
+				(selectedCredential.value?.id === id ? selectedCredential.value : undefined);
 			await activeClient.deleteCredential(id);
 			credentials.value = credentials.value.filter((c) => c.id !== id);
 			if (selectedCredential.value?.id === id) selectedCredential.value = null;
+			if (credentialCountsLoaded.value && existing) adjustCredentialCounts(existing.kind, -1);
+			else await refreshCredentialCounts();
 			notify({ type: 'success', title: 'Credential deleted' });
 		} catch {
 			notify({ type: 'error', title: 'Failed to delete credential' });
@@ -499,6 +572,8 @@ export const useVaultStore = defineStore('vault', () => {
 		isInitializing,
 		initError,
 		credentials,
+		credentialCountsLoaded,
+		credentialCountsLoading,
 		passwords,
 		apiKeys,
 		selectedCredential,

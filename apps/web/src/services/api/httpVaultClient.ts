@@ -22,6 +22,7 @@
  */
 
 import type {
+	CredentialCounts as ApiCredentialCounts,
 	CredentialDetail as ApiCredentialDetail,
 	CredentialKind as ApiCredentialKind,
 	CredentialPayload as ApiCredentialPayload,
@@ -324,6 +325,18 @@ export class HttpVaultClient implements VaultClient {
 				state: api.status,
 				vaultId: api.vaultId === null ? undefined : api.vaultId,
 			});
+		} catch (cause) {
+			this.#throwIfNetworkError(cause);
+		}
+	}
+
+	async getCredentialCounts(): Promise<ApiCredentialCounts> {
+		try {
+			const response = await this.#request(
+				`/vaults/${this.#vaultId}/credential-counts`,
+				{ method: 'GET' },
+			);
+			return await this.#json<ApiCredentialCounts>(response);
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
 		}

@@ -4,7 +4,7 @@ import {
 	type ErrorResponse,
 	safeMessageForCode,
 } from '@aegis/contracts';
-import { DomainError } from '@aegis/domain';
+import { DomainError, type DomainErrorCode } from '@aegis/domain';
 import type { FastifyInstance } from 'fastify';
 
 import { ForbiddenError, ThrottledError, UnauthenticatedError } from './errors.js';
@@ -26,7 +26,7 @@ const STATUS_BY_CODE: Readonly<Record<ErrorCode, number>> = {
 };
 
 /** Translate domain-owned failures into the public HTTP error vocabulary. */
-const DOMAIN_ERROR_TO_HTTP_CODE: Readonly<Record<string, ErrorCode>> = {
+const DOMAIN_ERROR_TO_HTTP_CODE: Readonly<Record<DomainErrorCode, ErrorCode>> = {
 	DOMAIN_INVALID_VAULT_INPUT: 'VALIDATION_ERROR',
 	DOMAIN_VAULT_ALREADY_INITIALIZED: 'CONFLICT',
 	DOMAIN_VAULT_NOT_FOUND: 'NOT_FOUND',

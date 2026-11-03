@@ -54,6 +54,8 @@ export {
 	CreateCredentialRequestSchema,
 	CreateCredentialResponseSchema,
 } from './credentials/create-credential.js';
+export type { CredentialCounts } from './credentials/credential-counts.js';
+export { CredentialCountsSchema } from './credentials/credential-counts.js';
 export type { CredentialDetail } from './credentials/credential-detail.js';
 export { CredentialDetailSchema } from './credentials/credential-detail.js';
 export type { CredentialKind } from './credentials/credential-kind.js';

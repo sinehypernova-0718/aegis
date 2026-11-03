@@ -29,9 +29,11 @@ export {
 	validateCredentialPayload,
 } from './credentials/credential-payload.js';
 // --- Errors -----------------------------------------------------------------
+export type { DomainErrorCode } from './errors/domain-errors.js';
 export {
 	CredentialDecryptionError,
 	CredentialNotFoundError,
+	DOMAIN_ERROR_CODES,
 	DomainError,
 	InvalidCredentialPayloadError,
 	InvalidCursorError,
@@ -96,6 +98,11 @@ export type {
 	GetCredentialInput,
 } from './use-cases/credentials/get-credential.js';
 export { GetCredential } from './use-cases/credentials/get-credential.js';
+export type {
+	CredentialCounts,
+	GetCredentialCountsInput,
+} from './use-cases/credentials/get-credential-counts.js';
+export { GetCredentialCounts } from './use-cases/credentials/get-credential-counts.js';
 export type {
 	ListCredentialsDeps,
 	ListCredentialsInput,

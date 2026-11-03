@@ -1,10 +1,11 @@
-import { DrizzleVaultRepository, type Database } from '@aegis/database';
+import { type Database, DrizzleVaultRepository } from '@aegis/database';
 import {
 	type Clock,
 	CreateCredential,
 	DefaultVaultSessionManager,
 	DeleteCredential,
 	GetCredential,
+	GetCredentialCounts,
 	GetVaultStatus,
 	type IdGenerator,
 	InitializeVault,
@@ -15,8 +16,8 @@ import {
 	UpdateCredential,
 } from '@aegis/domain';
 
-import { createCryptoVaultPort } from './crypto-vault-port.js';
 import { createCredentialRepositoryPort } from './credential-repository-port.js';
+import { createCryptoVaultPort } from './crypto-vault-port.js';
 
 /** Canonical purpose for the vault's active key envelope. */
 export const PRIMARY_KEY_ENVELOPE_PURPOSE = 'primary' as const;
@@ -41,6 +42,7 @@ export interface AegisContainer {
 	readonly recoverVault: RecoverVault;
 	readonly lockVault: LockVault;
 	readonly getVaultStatus: GetVaultStatus;
+	readonly getCredentialCounts: GetCredentialCounts;
 	readonly createCredential: CreateCredential;
 	readonly getCredential: GetCredential;
 	readonly listCredentials: ListCredentials;
@@ -60,6 +62,7 @@ export function createAegisContainer(options: AegisContainerOptions): AegisConta
 	const sessionManager = new DefaultVaultSessionManager(
 		options.idleTimeoutMs !== undefined ? { idleTimeoutMs: options.idleTimeoutMs } : {},
 	);
+	const listCredentials = new ListCredentials({ credentialRepository, sessionManager });
 	const keyEnvelopePurpose = options.keyEnvelopePurpose ?? PRIMARY_KEY_ENVELOPE_PURPOSE;
 	const recoveryKeyEnvelopePurpose =
 		options.recoveryKeyEnvelopePurpose ?? RECOVERY_KEY_ENVELOPE_PURPOSE;
@@ -84,6 +87,7 @@ export function createAegisContainer(options: AegisContainerOptions): AegisConta
 		}),
 		lockVault: new LockVault({ sessionManager }),
 		getVaultStatus: new GetVaultStatus({ vaultRepository, sessionManager }),
+		getCredentialCounts: new GetCredentialCounts({ listCredentials }),
 		createCredential: new CreateCredential({
 			credentialRepository,
 			sessionManager,
@@ -91,7 +95,7 @@ export function createAegisContainer(options: AegisContainerOptions): AegisConta
 			ids: options.ids,
 		}),
 		getCredential: new GetCredential({ credentialRepository, sessionManager }),
-		listCredentials: new ListCredentials({ credentialRepository, sessionManager }),
+		listCredentials,
 		updateCredential: new UpdateCredential({
 			credentialRepository,
 			sessionManager,

@@ -14,6 +14,7 @@ describe('@aegis/domain', () => {
 			'UnlockVault',
 			'LockVault',
 			'GetVaultStatus',
+			'GetCredentialCounts',
 			'CreateCredential',
 			'GetCredential',
 			'ListCredentials',
@@ -28,6 +29,7 @@ describe('@aegis/domain', () => {
 			'ENCRYPTED_RECORD_TYPE',
 			'CREDENTIAL_KINDS',
 			'DomainError',
+			'DOMAIN_ERROR_CODES',
 			'VaultLockedError',
 		]) {
 			expect(domain, `missing public export: ${name}`).toHaveProperty(name);
