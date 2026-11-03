@@ -74,6 +74,7 @@ export const useVaultStore = defineStore('vault', () => {
 	const recoveryKeyPresented = ref<string | null>(null);
 	const currentPage = ref<PageId>('overview');
 	let credentialCountsRequestId = 0;
+	let credentialRequestId = 0;
 	// Global, centralized credential-creation modal. Any surface (sidebar,
 	// overview, a credential list) can request it without navigating away.
 	const createModalOpen = ref(false);
@@ -393,6 +394,9 @@ export const useVaultStore = defineStore('vault', () => {
 
 		// Immediate reactive state hygiene: scrub cached credentials and keys from frontend memory
 		credentials.value = [];
+		credentialRequestId += 1;
+		isLoading.value = false;
+		isLoadingMoreCredentials.value = false;
 		credentialCountsRequestId += 1;
 		credentialCountsLoaded.value = false;
 		credentialCountsLoading.value = false;
@@ -430,7 +434,9 @@ export const useVaultStore = defineStore('vault', () => {
 	}
 
 	async function loadAll() {
+		const requestId = ++credentialRequestId;
 		isLoading.value = true;
+		isLoadingMoreCredentials.value = false;
 		credentialCountsRequestId += 1;
 		credentialCountsLoaded.value = false;
 		credentialCountsLoading.value = false;
@@ -438,28 +444,34 @@ export const useVaultStore = defineStore('vault', () => {
 		try {
 			if (activeClient.listCredentialPage) {
 				const page = await activeClient.listCredentialPage();
+				if (requestId !== credentialRequestId) return;
 				credentials.value = page.items;
 				nextCredentialCursor = page.nextCursor ?? undefined;
 				hasMoreCredentials.value = nextCredentialCursor !== undefined;
 			} else {
-				credentials.value = await activeClient.listCredentials();
+				const items = await activeClient.listCredentials();
+				if (requestId !== credentialRequestId) return;
+				credentials.value = items;
 				nextCredentialCursor = undefined;
 				hasMoreCredentials.value = false;
 			}
 			await refreshCredentialCounts();
 		} catch {
-			error.value = 'Failed to load credentials';
+			if (requestId === credentialRequestId) error.value = 'Failed to load credentials';
 		} finally {
-			isLoading.value = false;
+			if (requestId === credentialRequestId) isLoading.value = false;
 		}
 	}
 
 	async function loadMoreCredentials() {
 		if (!activeClient.listCredentialPage || !nextCredentialCursor || isLoadingMoreCredentials.value)
 			return;
+		const requestId = credentialRequestId;
+		const cursor = nextCredentialCursor;
 		isLoadingMoreCredentials.value = true;
 		try {
-			const page = await activeClient.listCredentialPage(nextCredentialCursor);
+			const page = await activeClient.listCredentialPage(cursor);
+			if (requestId !== credentialRequestId) return;
 			const knownIds = new Set(credentials.value.map((credential) => credential.id));
 			credentials.value = [
 				...credentials.value,
@@ -468,9 +480,9 @@ export const useVaultStore = defineStore('vault', () => {
 			nextCredentialCursor = page.nextCursor ?? undefined;
 			hasMoreCredentials.value = nextCredentialCursor !== undefined;
 		} catch {
-			error.value = 'Failed to load more credentials';
+			if (requestId === credentialRequestId) error.value = 'Failed to load more credentials';
 		} finally {
-			isLoadingMoreCredentials.value = false;
+			if (requestId === credentialRequestId) isLoadingMoreCredentials.value = false;
 		}
 	}
 

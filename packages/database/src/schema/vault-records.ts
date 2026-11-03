@@ -19,7 +19,11 @@ export const vaultRecords = pgTable(
 		encryptionVersion: integer('encryption_version').notNull(),
 		nonce: bytea('nonce').notNull(),
 		ciphertext: bytea('ciphertext').notNull(),
-		createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull(),
+		createdAt: timestamp('created_at', {
+			withTimezone: true,
+			mode: 'string',
+			precision: 3,
+		}).notNull(),
 		updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull(),
 		deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
 	},
@@ -27,6 +31,11 @@ export const vaultRecords = pgTable(
 		index('vault_records_vault_id_idx').on(table.vaultId),
 		index('vault_records_vault_type_idx').on(table.vaultId, table.recordType),
 		index('vault_records_created_at_idx').on(table.createdAt),
+		index('vault_records_vault_created_id_idx').on(
+			table.vaultId,
+			table.createdAt.desc(),
+			table.id.desc(),
+		),
 	],
 );
 
