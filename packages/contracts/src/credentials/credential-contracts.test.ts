@@ -41,6 +41,7 @@ describe('credential contracts', () => {
 			'api_key',
 			'access_token',
 			'refresh_token',
+			'oauth2',
 			'ssh_key',
 			'certificate',
 			'recovery_code',

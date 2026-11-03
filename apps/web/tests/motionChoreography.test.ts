@@ -130,12 +130,14 @@ assert.ok(
 	'Store lock() must immediately scrub credentials without delaying for animations',
 );
 assert.ok(
-	storeContent.includes('passwords.value = []'),
-	'Store lock() must immediately scrub passwords',
+	storeContent.includes('const passwords = computed(') &&
+		storeContent.includes("credential.kind === 'password'"),
+	'Passwords must be derived from the credential list so lock() can scrub them centrally',
 );
 assert.ok(
-	storeContent.includes('apiKeys.value = []'),
-	'Store lock() must immediately scrub apiKeys',
+	storeContent.includes('const apiKeys = computed(') &&
+		storeContent.includes("credential.kind === 'api-key'"),
+	'API keys must be derived from the credential list so lock() can scrub them centrally',
 );
 assert.ok(
 	storeContent.includes('selectedCredential.value = null'),
