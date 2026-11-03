@@ -21,6 +21,7 @@
 		"check": "biome check ."
 	},
 	"dependencies": {
+		"@aegis/contracts": "workspace:*",
 		"lucide-vue-next": "^0.469.0",
 		"motion-v": "^2.9.0",
 		"pinia": "^2.3.1",

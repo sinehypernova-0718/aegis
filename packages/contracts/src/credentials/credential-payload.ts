@@ -1,8 +1,7 @@
 import { z } from 'zod';
-
-import { IsoUtcTimestampSchema } from '../common/timestamps.js';
 import { boundedNonBlankString, strictObject } from '../common/conventions.js';
-import { CREDENTIAL_KINDS, CredentialKindSchema, type CredentialKind } from './credential-kind.js';
+import { IsoUtcTimestampSchema } from '../common/timestamps.js';
+import { CREDENTIAL_KINDS, type CredentialKind, CredentialKindSchema } from './credential-kind.js';
 
 /** Payload schema version stored inside the ciphertext. */
 export const CREDENTIAL_PAYLOAD_SCHEMA_VERSION = 1 as const;
@@ -28,6 +27,25 @@ export interface CredentialPayloadFields {
 	notes?: string | undefined;
 	tags: string[];
 	expiresAt?: string | undefined;
+	oauth2Metadata?: OAuth2Metadata | undefined;
+}
+
+/** Stored OAuth2 details only; Aegis does not execute OAuth flows. */
+export interface OAuth2Metadata {
+	appName?: string | undefined;
+	clientId?: string | undefined;
+	clientSecret?: string | undefined;
+	tokenUrl?: string | undefined;
+	authUrl?: string | undefined;
+	scopes?: string[] | undefined;
+	grantType?:
+		| 'authorization_code'
+		| 'client_credentials'
+		| 'refresh_token'
+		| 'implicit'
+		| undefined;
+	expiresAt?: string | undefined;
+	lastRefreshedAt?: string | undefined;
 }
 
 /** Caller-supplied credential fields accepted by the HTTP API. */
@@ -40,6 +58,7 @@ export interface CredentialPayloadInput {
 	notes?: string | undefined;
 	tags?: string[] | undefined;
 	expiresAt?: string | undefined;
+	oauth2Metadata?: OAuth2Metadata | undefined;
 }
 
 /** Stored payload input: caller fields plus the domain-stamped schema version. */
@@ -53,6 +72,7 @@ export interface StoredCredentialPayloadInput {
 	notes?: string | undefined;
 	tags?: string[] | undefined;
 	expiresAt?: string | undefined;
+	oauth2Metadata?: OAuth2Metadata | undefined;
 }
 
 /** Fully-populated credential payload returned by read endpoints. */
@@ -66,7 +86,25 @@ export interface CredentialPayload {
 	notes?: string | undefined;
 	tags: string[];
 	expiresAt?: string | undefined;
+	oauth2Metadata?: OAuth2Metadata | undefined;
 }
+
+const OAuth2MetadataSchema = strictObject({
+	appName: boundedNonBlankString(1, CREDENTIAL_NAME_MAX_LENGTH).optional(),
+	clientId: boundedNonBlankString(1, CREDENTIAL_NAME_MAX_LENGTH).optional(),
+	clientSecret: z.string().min(1).max(CREDENTIAL_SECRET_MAX_LENGTH).optional(),
+	tokenUrl: boundedNonBlankString(1, CREDENTIAL_URL_MAX_LENGTH).optional(),
+	authUrl: boundedNonBlankString(1, CREDENTIAL_URL_MAX_LENGTH).optional(),
+	scopes: z
+		.array(boundedNonBlankString(1, CREDENTIAL_TAG_MAX_LENGTH))
+		.max(CREDENTIAL_MAX_TAGS)
+		.optional(),
+	grantType: z
+		.enum(['authorization_code', 'client_credentials', 'refresh_token', 'implicit'])
+		.optional(),
+	expiresAt: IsoUtcTimestampSchema.optional(),
+	lastRefreshedAt: IsoUtcTimestampSchema.optional(),
+});
 
 const CredentialInputSchema = strictObject({
 	type: CredentialKindSchema,
@@ -81,17 +119,36 @@ const CredentialInputSchema = strictObject({
 		.max(CREDENTIAL_MAX_TAGS)
 		.default([]),
 	expiresAt: IsoUtcTimestampSchema.optional(),
+	oauth2Metadata: OAuth2MetadataSchema.optional(),
 });
 
 const StoredCredentialPayloadSchema = CredentialInputSchema.extend({
 	schemaVersion: z.literal(CREDENTIAL_PAYLOAD_SCHEMA_VERSION),
-}).strict();
+})
+	.strict()
+	.superRefine((payload, context) => {
+		if (payload.type === 'oauth2' && payload.oauth2Metadata === undefined) {
+			context.addIssue({
+				code: 'custom',
+				path: ['oauth2Metadata'],
+				message: 'required for oauth2 credentials',
+			});
+		}
+	});
 
 /** Parses and validates caller-provided credential fields. */
 export const CredentialPayloadInputSchema: z.ZodType<
 	CredentialPayloadFields,
 	CredentialPayloadInput
-> = CredentialInputSchema;
+> = CredentialInputSchema.superRefine((payload, context) => {
+	if (payload.type === 'oauth2' && payload.oauth2Metadata === undefined) {
+		context.addIssue({
+			code: 'custom',
+			path: ['oauth2Metadata'],
+			message: 'required for oauth2 credentials',
+		});
+	}
+});
 
 /** Parses and validates a stored/returned credential payload. */
 export const CredentialPayloadSchema: z.ZodType<CredentialPayload, StoredCredentialPayloadInput> =

@@ -1,9 +1,9 @@
 import {
-	type VaultKeyEnvelope,
-	type VaultSession,
 	createVaultSession,
 	generateRecoveryKey,
 	unlockVaultSession,
+	type VaultKeyEnvelope,
+	type VaultSession,
 	validateVaultKeyEnvelope,
 } from '@aegis/crypto';
 import type { VaultCryptoPort } from '@aegis/domain';
@@ -35,6 +35,8 @@ export function createCryptoVaultPort(): VaultCryptoPort {
 			passphrase: string;
 			envelope: unknown;
 		}): Promise<VaultSession> => unlockVaultSession(input),
-		validateEnvelope: (input: unknown): VaultKeyEnvelope => validateVaultKeyEnvelope(input),
+		validateEnvelope: (input: unknown): void => {
+			validateVaultKeyEnvelope(input);
+		},
 	};
 }

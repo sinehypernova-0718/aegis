@@ -1,8 +1,10 @@
 import type {
 	CreateCredentialInput,
+	CredentialCounts,
 	CredentialView,
 	DeleteCredentialInput,
 	DeleteCredentialResult,
+	GetCredentialCountsInput,
 	GetCredentialInput,
 	GetVaultStatusInput,
 	GetVaultStatusResult,
@@ -40,6 +42,9 @@ export interface AppContainer {
 	readonly lockVault: { execute(input: LockVaultInput): Promise<LockVaultResult> };
 	readonly getVaultStatus: {
 		execute(input: GetVaultStatusInput): Promise<GetVaultStatusResult>;
+	};
+	readonly getCredentialCounts: {
+		execute(input: GetCredentialCountsInput): Promise<CredentialCounts>;
 	};
 	readonly createCredential: {
 		execute(input: CreateCredentialInput): Promise<CredentialView>;

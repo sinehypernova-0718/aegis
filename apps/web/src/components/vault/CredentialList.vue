@@ -1,51 +1,47 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Motion, AnimatePresence } from 'motion-v';
 import {
-	Search,
-	Plus,
-	Filter,
 	ArrowUpDown,
-	ExternalLink,
 	Edit3,
+	ExternalLink,
+	FileText,
+	Filter,
+	Fingerprint,
+	Globe,
+	Key,
+	Lock,
+	Plus,
+	Search,
+	Shield,
+	Tag,
+	Terminal,
 	Trash2,
 	X,
-	Tag,
-	Key,
-	Terminal,
-	Shield,
-	FileText,
-	Globe,
-	Fingerprint,
-	Lock,
 } from 'lucide-vue-next';
-import { useVaultStore } from '@/stores/vaultStore';
-import { CATEGORIES, CREDENTIAL_KINDS } from '@/services/api/contracts';
-import type {
-	CredentialSummary,
-	CredentialKind,
-	UpdateCredentialInput,
-} from '@/types';
-import AppButton from '@/components/ui/AppButton.vue';
-import AppBadge from '@/components/ui/AppBadge.vue';
-import AppDialog from '@/components/ui/AppDialog.vue';
-import ModalShell from '@/components/ui/ModalShell.vue';
-import CredentialForm from '@/components/vault/CredentialForm.vue';
-import SplitLayout from '@/components/layout/SplitLayout.vue';
-import SplitSidebarHeader from '@/components/layout/SplitSidebarHeader.vue';
+import { AnimatePresence, Motion } from 'motion-v';
+import { computed, ref } from 'vue';
 import DetailContainer from '@/components/layout/DetailContainer.vue';
 import DetailHeader from '@/components/layout/DetailHeader.vue';
+import SplitLayout from '@/components/layout/SplitLayout.vue';
+import SplitSidebarHeader from '@/components/layout/SplitSidebarHeader.vue';
+import AppBadge from '@/components/ui/AppBadge.vue';
+import AppButton from '@/components/ui/AppButton.vue';
+import AppDialog from '@/components/ui/AppDialog.vue';
+import AppSelect, { type AppSelectOption } from '@/components/ui/AppSelect.vue';
 import EmptyState from '@/components/ui/EmptyState.vue';
 import FieldGroup from '@/components/ui/FieldGroup.vue';
-import AppSelect, { type AppSelectOption } from '@/components/ui/AppSelect.vue';
+import ModalShell from '@/components/ui/ModalShell.vue';
 import ProviderLogo from '@/components/ui/ProviderLogo.vue';
-import SecretField from '@/components/vault/detail/SecretField.vue';
+import CredentialForm from '@/components/vault/CredentialForm.vue';
 import ApiKeyDetail from '@/components/vault/detail/ApiKeyDetail.vue';
-import SshKeyDetail from '@/components/vault/detail/SshKeyDetail.vue';
 import OAuth2Detail from '@/components/vault/detail/OAuth2Detail.vue';
+import SecretField from '@/components/vault/detail/SecretField.vue';
 import SecureNoteDetail from '@/components/vault/detail/SecureNoteDetail.vue';
-import { matchProviderFromText } from '@/services/providers';
+import SshKeyDetail from '@/components/vault/detail/SshKeyDetail.vue';
 import { springs } from '@/motion/tokens';
+import { CATEGORIES, CREDENTIAL_KINDS } from '@/services/api/contracts';
+import { matchProviderFromText } from '@/services/providers';
+import { useVaultStore } from '@/stores/vaultStore';
+import type { CredentialKind, CredentialSummary, UpdateCredentialInput } from '@/types';
 
 interface Props {
 	title: string;
@@ -80,7 +76,6 @@ const showEditModal = ref(false);
 const pendingSelectionId = ref<string | null>(null);
 const showDeleteConfirm = ref(false);
 const isDeleting = ref(false);
-
 
 const sourceItems = computed(() => {
 	if (props.items) {
@@ -166,7 +161,8 @@ function providerFor(title: string) {
 	return matchProviderFromText(title);
 }
 
-function getSecretLabel(k?: CredentialKind): string {	switch (k) {
+function getSecretLabel(k?: CredentialKind): string {
+	switch (k) {
 		case 'password':
 			return 'Password';
 		case 'api-key':
@@ -371,7 +367,9 @@ async function handleDelete() {
           :description="
             sourceItems.length === 0
               ? 'Create your first credential to get started.'
-              : 'Try adjusting the search or filters.'
+              : store.hasMoreCredentials
+                ? 'No matches in the loaded items. Load more credentials to search further.'
+                : 'Try adjusting the search or filters.'
           "
         />
 
@@ -430,6 +428,16 @@ async function handleDelete() {
             </div>
           </button>
         </Motion>
+
+        <button
+          v-if="store.hasMoreCredentials"
+          type="button"
+          :disabled="store.isLoadingMoreCredentials"
+          class="w-full rounded-md border px-3 py-2 text-xs text-[var(--text-secondary)] border-[var(--border-subtle)] bg-[var(--surface-primary)] disabled:opacity-50"
+          @click="store.loadMoreCredentials()"
+        >
+          {{ store.isLoadingMoreCredentials ? 'Loading…' : 'Load more credentials' }}
+        </button>
       </div>
     </template>
 

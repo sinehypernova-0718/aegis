@@ -1,13 +1,14 @@
 // Service contracts — typed interface for vault operations
 
+import type { CredentialCounts } from '@aegis/contracts';
 import type {
+	ActivityEvent,
+	CreateCredentialInput,
+	CredentialDetail,
 	CredentialKind,
 	CredentialSummary,
-	CredentialDetail,
-	CreateCredentialInput,
 	UpdateCredentialInput,
 	VaultStatus,
-	ActivityEvent,
 } from '@/types';
 
 export interface CreateVaultResult {
@@ -28,6 +29,7 @@ export interface RecoverVaultResult {
 
 export interface VaultClient {
 	getVaultStatus(): Promise<VaultStatus>;
+	getCredentialCounts?(): Promise<CredentialCounts>;
 	unlockVault(passphrase: string): Promise<{ success: boolean; error?: string }>;
 	createVault(passphrase: string, confirmPassphrase: string): Promise<CreateVaultResult>;
 	/**
@@ -41,6 +43,10 @@ export interface VaultClient {
 		kind?: CredentialKind;
 		category?: string;
 	}): Promise<CredentialSummary[]>;
+	listCredentialPage?(cursor?: string): Promise<{
+		items: CredentialSummary[];
+		nextCursor: string | null;
+	}>;
 	listPasswords(): Promise<CredentialSummary[]>;
 	listApiKeys(): Promise<CredentialSummary[]>;
 	listOAuth2Credentials?(): Promise<CredentialSummary[]>;

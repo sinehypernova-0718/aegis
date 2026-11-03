@@ -1,5 +1,3 @@
-import type { EncryptedRecord, VaultKeyEnvelope, VaultSession } from '@aegis/crypto';
-
 import type {
 	CredentialListOptions,
 	CredentialRecordRow,
@@ -9,8 +7,11 @@ import type {
 import type { Clock, IdGenerator, Scheduler } from '../ports/runtime.js';
 import type {
 	CreateVaultSessionRequest,
+	EncryptedRecord,
 	UnlockVaultSessionRequest,
 	VaultCryptoPort,
+	VaultKeyEnvelope,
+	VaultSession,
 } from '../ports/vault-crypto.js';
 import type {
 	NewPersistedKeyEnvelope,
@@ -116,9 +117,11 @@ export class FakeVaultCryptoPort implements VaultCryptoPort {
 		return key;
 	}
 
-	async createVaultSession(
-		input: CreateVaultSessionRequest,
-	): Promise<{ envelope: VaultKeyEnvelope; session: VaultSession; recoveryEnvelope?: VaultKeyEnvelope }> {
+	async createVaultSession(input: CreateVaultSessionRequest): Promise<{
+		envelope: VaultKeyEnvelope;
+		session: VaultSession;
+		recoveryEnvelope?: VaultKeyEnvelope;
+	}> {
 		this.createCount += 1;
 		const session = new FakeVaultSession(input.vaultId, this.store, this.nonces);
 		this.createdSessions.push(session);
@@ -136,10 +139,10 @@ export class FakeVaultCryptoPort implements VaultCryptoPort {
 		return new FakeVaultSession(input.vaultId, this.store, this.nonces);
 	}
 
-	validateEnvelope(input: unknown): VaultKeyEnvelope {
+	validateEnvelope(input: unknown): void {
 		if (this.behavior === 'unsupported') throw codedError('CRYPTO_UNSUPPORTED_VERSION');
 		if (this.behavior === 'malformed') throw codedError('CRYPTO_ENVELOPE_INVALID');
-		return input as VaultKeyEnvelope;
+		void (input as VaultKeyEnvelope);
 	}
 }
 
@@ -208,19 +211,19 @@ export class InMemoryCredentialRepository implements CredentialRepositoryPort {
 		let rows = [...this.records.values()].filter((row) => row.vaultId === vaultId);
 		rows.sort((a, b) =>
 			a.createdAt === b.createdAt
-				? a.id < b.id
+				? a.id > b.id
 					? -1
-					: a.id > b.id
+					: a.id < b.id
 						? 1
 						: 0
-				: a.createdAt < b.createdAt
+				: a.createdAt > b.createdAt
 					? -1
 					: 1,
 		);
 		if (options.after) {
 			const { createdAt, id } = options.after;
 			rows = rows.filter(
-				(row) => row.createdAt > createdAt || (row.createdAt === createdAt && row.id > id),
+				(row) => row.createdAt < createdAt || (row.createdAt === createdAt && row.id < id),
 			);
 		}
 		return rows.slice(0, options.limit);

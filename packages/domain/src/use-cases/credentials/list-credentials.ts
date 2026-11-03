@@ -1,5 +1,3 @@
-import { PAGINATION_DEFAULT_LIMIT, PAGINATION_MAX_LIMIT } from '@aegis/contracts';
-
 import {
 	decodeCredentialCursor,
 	encodeCredentialCursor,
@@ -13,6 +11,9 @@ import type {
 } from '../../ports/credential-repository.js';
 import type { VaultSessionManager } from '../../sessions/vault-session-manager.js';
 import type { CredentialView } from './credential-view.js';
+
+const PAGINATION_DEFAULT_LIMIT = 20;
+const PAGINATION_MAX_LIMIT = 100;
 
 export interface ListCredentialsDeps {
 	readonly credentialRepository: CredentialRepositoryPort;

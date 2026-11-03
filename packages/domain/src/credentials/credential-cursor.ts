@@ -1,9 +1,17 @@
-import { CURSOR_MAX_LENGTH, EntityIdSchema, IsoUtcTimestampSchema } from '@aegis/contracts';
 import { z } from 'zod';
 
 import { InvalidCursorError } from '../errors/domain-errors.js';
 
 export const CURSOR_DECODED_MAX_BYTES = 256 as const;
+const CURSOR_MAX_LENGTH = 512;
+const EntityIdSchema = z.string().uuid();
+const IsoUtcTimestampSchema = z
+	.string()
+	.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
+	.refine((value) => {
+		const date = new Date(value);
+		return !Number.isNaN(date.getTime()) && date.toISOString() === value;
+	});
 
 export interface CredentialCursor {
 	readonly createdAt: string;

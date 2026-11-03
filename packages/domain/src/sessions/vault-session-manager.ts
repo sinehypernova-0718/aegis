@@ -1,7 +1,6 @@
-import type { VaultSession } from '@aegis/crypto';
-
 import { SessionRegistrationConflictError, VaultLockedError } from '../errors/domain-errors.js';
 import type { Scheduler } from '../ports/runtime.js';
+import type { VaultSession } from '../ports/vault-crypto.js';
 import { DEFAULT_VAULT_IDLE_TIMEOUT_MS, systemScheduler } from './scheduler.js';
 
 interface Entry {
@@ -45,7 +44,7 @@ function isLocking(entry: Entry): boolean {
  *  - `lockAll` locks every registered vault. Used by application shutdown.
  *
  * The manager never stores passphrases, plaintext credentials, or key material;
- * session objects are opaque and owned by `@aegis/crypto`.
+ * session objects are opaque and implemented by the composition-supplied crypto adapter.
  */
 export interface VaultSessionManager {
 	register(vaultId: string, session: VaultSession): void;

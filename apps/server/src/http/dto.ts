@@ -24,6 +24,7 @@ export function toDomainCredentialPayload(
 		...(payload.url !== undefined ? { url: payload.url } : {}),
 		...(payload.notes !== undefined ? { notes: payload.notes } : {}),
 		...(payload.expiresAt !== undefined ? { expiresAt: payload.expiresAt } : {}),
+		...(payload.oauth2Metadata !== undefined ? { oauth2Metadata: payload.oauth2Metadata } : {}),
 	};
 }
 

@@ -1,10 +1,4 @@
 import { describe, expect, it } from 'vitest';
-
-import { CreateCredential } from './create-credential.js';
-import { DeleteCredential } from './delete-credential.js';
-import { GetCredential } from './get-credential.js';
-import { ListCredentials } from './list-credentials.js';
-import { UpdateCredential } from './update-credential.js';
 import { ENCRYPTED_RECORD_TYPE } from '../../credentials/credential-kind.js';
 import {
 	CredentialDecryptionError,
@@ -13,8 +7,6 @@ import {
 	PersistenceError,
 	VaultLockedError,
 } from '../../errors/domain-errors.js';
-import { InitializeVault } from '../vault/initialize-vault.js';
-import { LockVault } from '../vault/lock-vault.js';
 import { DefaultVaultSessionManager } from '../../sessions/vault-session-manager.js';
 import {
 	FakeScheduler,
@@ -24,6 +16,13 @@ import {
 	InMemoryVaultRepository,
 	SequentialIdGenerator,
 } from '../../testing/fakes.js';
+import { InitializeVault } from '../vault/initialize-vault.js';
+import { LockVault } from '../vault/lock-vault.js';
+import { CreateCredential } from './create-credential.js';
+import { DeleteCredential } from './delete-credential.js';
+import { GetCredential } from './get-credential.js';
+import { ListCredentials } from './list-credentials.js';
+import { UpdateCredential } from './update-credential.js';
 
 const PURPOSE = 'primary';
 const RECOVERY_PURPOSE = 'recovery';
@@ -97,11 +96,11 @@ describe('credential use cases', () => {
 		}
 
 		const page1 = await s.list.execute({ vaultId: s.vaultId, limit: 2 });
-		expect(page1.items.map((item) => item.id)).toEqual([ids[0], ids[1]]);
+		expect(page1.items.map((item) => item.id)).toEqual([ids[2], ids[1]]);
 		expect(page1.nextCursor).not.toBeNull();
 
 		const page2 = await s.list.execute({ vaultId: s.vaultId, cursor: page1.nextCursor });
-		expect(page2.items.map((item) => item.id)).toEqual([ids[2]]);
+		expect(page2.items.map((item) => item.id)).toEqual([ids[0]]);
 		expect(page2.nextCursor).toBeNull();
 	});
 

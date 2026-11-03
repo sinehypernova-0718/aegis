@@ -11,42 +11,43 @@
  *  - Activity rows stagger in when scrolled into view, capped so long
  *    lists never leave tail items waiting.
  */
-import { computed } from 'vue';
-import { motion } from 'motion-v';
+
 import {
-	Key,
-	Fingerprint,
-	Shield,
 	Activity,
+	ArrowRight,
 	Clock,
+	FileText,
+	Fingerprint,
+	Globe,
+	Key,
 	Lock,
 	Plus,
-	Terminal,
-	Globe,
-	FileText,
+	Shield,
 	ShieldCheck,
-	ArrowRight,
+	Terminal,
 } from 'lucide-vue-next';
-import { useVaultStore } from '@/stores/vaultStore';
-import { useSessionPreferences } from '@/composables/useSessionPreferences';
-import type { CredentialKind } from '@/types';
+import { motion } from 'motion-v';
+import { computed } from 'vue';
+import Grid from '@/components/layout/Grid.vue';
 import PageContainer from '@/components/layout/PageContainer.vue';
 import PageHeader from '@/components/layout/PageHeader.vue';
-import Card from '@/components/ui/Card.vue';
-import AppButton from '@/components/ui/AppButton.vue';
-import AppBadge from '@/components/ui/AppBadge.vue';
 import Section from '@/components/layout/Section.vue';
-import Grid from '@/components/layout/Grid.vue';
+import AppBadge from '@/components/ui/AppBadge.vue';
+import AppButton from '@/components/ui/AppButton.vue';
+import Card from '@/components/ui/Card.vue';
+import { useSessionPreferences } from '@/composables/useSessionPreferences';
 import {
 	MotionReveal,
 	MotionStagger,
 	MotionStaggerItem,
-	ScrollProgressBar,
 	ParallaxLayer,
+	ScrollProgressBar,
 } from '@/motion/components';
 import { pageScroller } from '@/motion/composables/useScrollContainer';
 import { cardInteraction } from '@/motion/presets';
-import { staggers, cappedStaggerDelay } from '@/motion/tokens';
+import { cappedStaggerDelay, staggers } from '@/motion/tokens';
+import { useVaultStore } from '@/stores/vaultStore';
+import type { CredentialKind } from '@/types';
 
 const store = useVaultStore();
 const { autoLockLabel } = useSessionPreferences();
@@ -56,28 +57,39 @@ const { autoLockLabel } = useSessionPreferences();
 const isDev = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV);
 
 const stats = computed(() => {
-	const sshAndOauth = (store.status.sshKeyCount ?? 0) + (store.status.oauth2Count ?? 0);
+	const count = (reported: number | undefined, loadedFallback: number) =>
+		reported ??
+		(store.credentialCountsLoaded ? loadedFallback : store.credentialCountsLoading ? '…' : '—');
+	const sshAndOauth =
+		store.status.sshKeyCount !== undefined || store.status.oauth2Count !== undefined
+			? (store.status.sshKeyCount ?? 0) + (store.status.oauth2Count ?? 0)
+			: store.credentialCountsLoaded
+				? store.credentials.filter((item) => item.kind === 'ssh-key' || item.kind === 'oauth2')
+						.length
+				: store.credentialCountsLoading
+					? '…'
+					: '—';
 
 	// Total first: the primary figure carries the most visual weight, the
 	// per-kind counts read as its breakdown (design spec §5.4).
 	return [
 		{
 			label: 'Total Credentials',
-			value: store.status.credentialCount ?? store.credentials.length,
+			value: count(store.status.credentialCount, store.credentials.length),
 			icon: Lock,
 			color: 'var(--accent-primary)',
 			page: 'passwords' as const,
 		},
 		{
 			label: 'Passwords',
-			value: store.status.passwordCount ?? store.passwords.length,
+			value: count(store.status.passwordCount, store.passwords.length),
 			icon: Key,
 			color: 'var(--type-password)',
 			page: 'passwords' as const,
 		},
 		{
 			label: 'API Keys & Tokens',
-			value: store.status.apiKeyCount ?? store.apiKeys.length,
+			value: count(store.status.apiKeyCount, store.apiKeys.length),
 			icon: Fingerprint,
 			color: 'var(--type-api-key)',
 			page: 'api-keys' as const,

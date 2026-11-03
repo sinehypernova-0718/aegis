@@ -1,5 +1,7 @@
 // Aegis Type Definitions
 
+import type { OAuth2Metadata as ContractOAuth2Metadata } from '@aegis/contracts';
+
 export type CredentialKind =
 	| 'password'
 	| 'api-key'
@@ -32,22 +34,7 @@ export interface ApiKeyMetadata {
 }
 
 // OAuth2 credential storage metadata (storage model, without OAuth flow execution)
-export interface OAuth2Metadata {
-	appName?: string | undefined;
-	clientId?: string | undefined;
-	clientSecret?: string | undefined;
-	tokenUrl?: string | undefined;
-	authUrl?: string | undefined;
-	scopes?: string[] | undefined;
-	grantType?:
-		| 'authorization_code'
-		| 'client_credentials'
-		| 'refresh_token'
-		| 'implicit'
-		| undefined;
-	expiresAt?: string | undefined;
-	lastRefreshedAt?: string | undefined;
-}
+export type OAuth2Metadata = ContractOAuth2Metadata;
 
 // SSH Key specific metadata
 export interface SshKeyMetadata {

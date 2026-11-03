@@ -11,20 +11,21 @@ and **no** database code: it defines ports, and the application composition root
 - Credential use cases: `CreateCredential`, `GetCredential`, `ListCredentials`, `UpdateCredential`, `DeleteCredential`.
 - A process-scoped `DefaultVaultSessionManager` (one session per vault).
 - Credential payload schema, canonical serialization, and pagination cursors.
-- Typed domain errors (`DomainError` hierarchy) that map to `@aegis/contracts` error codes.
+- Typed domain errors (`DomainError` hierarchy) mapped to transport error codes by the HTTP boundary.
 
 ## Boundaries
 
 | The domain may                                                     | The domain must not                             |
 | ------------------------------------------------------------------ | ----------------------------------------------- |
-| Use `@aegis/crypto` **types** (`VaultSession`, `VaultKeyEnvelope`) | Import Drizzle, `pg`, SQL, or `@aegis/database` |
-| Depend on `@aegis/contracts` bounds/error codes + `zod`            | Perform key derivation or AEAD directly         |
+| Define narrow ports for crypto and persistence                   | Import crypto, database, or HTTP implementations |
+| Depend on domain-owned bounds/error codes + `zod`                  | Perform key derivation or AEAD directly         |
 | Receive an opaque injected `VaultCryptoPort`                       | Hold raw DEK/KEK bytes                          |
 | Define repository ports satisfied structurally                     | Construct module-level session singletons       |
 
-The concrete Drizzle repositories are adapted to the ports at the composition
-boundary (`apps/server/src/composition/`), so no database types leak into this
-package.
+Crypto and Drizzle implementations are adapted at the composition boundary
+(`apps/server/src/composition/`). The domain owns the minimum session interface
+it needs and does not import `@aegis/crypto`, `@aegis/database`, or
+`@aegis/contracts`.
 
 ## Ports
 

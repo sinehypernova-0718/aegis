@@ -1,4 +1,5 @@
 import { InvalidVaultInputError } from '../../errors/domain-errors.js';
+import { asPersistenceError } from '../../errors/mapping.js';
 import type { VaultRepositoryPort } from '../../ports/vault-repository.js';
 import type { VaultSessionManager } from '../../sessions/vault-session-manager.js';
 
@@ -33,7 +34,12 @@ export class GetVaultStatus {
 		if (typeof input?.vaultId !== 'string' || input.vaultId.length === 0) {
 			throw new InvalidVaultInputError('vaultId must be a non-empty string');
 		}
-		const vault = await this.#deps.vaultRepository.getVaultById(input.vaultId);
+		let vault: Awaited<ReturnType<VaultRepositoryPort['getVaultById']>>;
+		try {
+			vault = await this.#deps.vaultRepository.getVaultById(input.vaultId);
+		} catch (error) {
+			throw asPersistenceError(error, 'failed to read vault status');
+		}
 		if (!vault) {
 			return { status: 'uninitialized', vaultId: null };
 		}

@@ -1,5 +1,3 @@
-import type { EncryptedRecord } from '@aegis/crypto';
-
 import {
 	type CredentialPayload,
 	type CredentialPayloadInput,
@@ -8,8 +6,12 @@ import {
 } from '../../credentials/credential-payload.js';
 import { CredentialNotFoundError, InvalidVaultInputError } from '../../errors/domain-errors.js';
 import { asPersistenceError, mapRecordEncryptionError } from '../../errors/mapping.js';
-import type { CredentialRecordRow, CredentialRepositoryPort } from '../../ports/credential-repository.js';
+import type {
+	CredentialRecordRow,
+	CredentialRepositoryPort,
+} from '../../ports/credential-repository.js';
 import type { Clock } from '../../ports/runtime.js';
+import type { EncryptedRecord } from '../../ports/vault-crypto.js';
 import type { VaultSessionManager } from '../../sessions/vault-session-manager.js';
 
 export interface UpdateCredentialDeps {

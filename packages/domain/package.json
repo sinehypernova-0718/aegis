@@ -34,11 +34,10 @@
 		"check": "biome check ."
 	},
 	"devDependencies": {
+		"@aegis/contracts": "workspace:*",
 		"@types/node": "24.19.2"
 	},
 	"dependencies": {
-		"@aegis/contracts": "workspace:*",
-		"@aegis/crypto": "workspace:*",
 		"zod": "^4.6.7"
 	}
 }

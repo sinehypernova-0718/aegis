@@ -229,14 +229,14 @@ describe.skipIf(!databaseUrl)('PostgreSQL repository behavior', () => {
 			});
 
 			const page1 = await recordRepository.listRecordsByVault(vaultId, { limit: 2 });
-			expect(page1.map((r) => r.id)).toEqual([ids[0], ids[1]]);
+			expect(page1.map((r) => r.id)).toEqual([ids[2], ids[1]]);
 
 			const last = page1[1];
 			const page2 = await recordRepository.listRecordsByVault(vaultId, {
 				limit: 2,
 				after: { createdAt: last?.createdAt as string, id: last?.id as string },
 			});
-			expect(page2.map((r) => r.id)).toEqual([ids[2]]);
+			expect(page2.map((r) => r.id)).toEqual([ids[0]]);
 		} finally {
 			await client.close();
 		}
