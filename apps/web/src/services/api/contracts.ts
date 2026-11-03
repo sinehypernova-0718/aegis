@@ -1,13 +1,13 @@
 // Service contracts — typed interface for vault operations
 
 import type {
+	ActivityEvent,
+	CreateCredentialInput,
+	CredentialDetail,
 	CredentialKind,
 	CredentialSummary,
-	CredentialDetail,
-	CreateCredentialInput,
 	UpdateCredentialInput,
 	VaultStatus,
-	ActivityEvent,
 } from '@/types';
 
 export interface CreateVaultResult {
@@ -41,6 +41,10 @@ export interface VaultClient {
 		kind?: CredentialKind;
 		category?: string;
 	}): Promise<CredentialSummary[]>;
+	listCredentialPage?(cursor?: string): Promise<{
+		items: CredentialSummary[];
+		nextCursor: string | null;
+	}>;
 	listPasswords(): Promise<CredentialSummary[]>;
 	listApiKeys(): Promise<CredentialSummary[]>;
 	listOAuth2Credentials?(): Promise<CredentialSummary[]>;

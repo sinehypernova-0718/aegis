@@ -1,8 +1,3 @@
-import {
-	ENCRYPTED_PAYLOAD_MAX_BYTES,
-	IsoUtcTimestampSchema,
-	boundedNonBlankString,
-} from '@aegis/contracts';
 import { z } from 'zod';
 
 import { InvalidCredentialPayloadError } from '../errors/domain-errors.js';
@@ -22,6 +17,37 @@ export const CREDENTIAL_URL_MAX_LENGTH = 2_048 as const;
 export const CREDENTIAL_NOTES_MAX_LENGTH = 4_096 as const;
 export const CREDENTIAL_TAG_MAX_LENGTH = 128 as const;
 export const CREDENTIAL_MAX_TAGS = 32 as const;
+const ENCRYPTED_PAYLOAD_MAX_BYTES = 65_536;
+const IsoUtcTimestampSchema = z
+	.string()
+	.regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
+	.refine((value) => {
+		const date = new Date(value);
+		return !Number.isNaN(date.getTime()) && date.toISOString() === value;
+	});
+const boundedNonBlankString = (minimum: number, maximum: number) =>
+	z
+		.string()
+		.min(minimum)
+		.max(maximum)
+		.refine((value) => value.trim().length >= minimum);
+
+export interface OAuth2Metadata {
+	appName?: string | undefined;
+	clientId?: string | undefined;
+	clientSecret?: string | undefined;
+	tokenUrl?: string | undefined;
+	authUrl?: string | undefined;
+	scopes?: string[] | undefined;
+	grantType?:
+		| 'authorization_code'
+		| 'client_credentials'
+		| 'refresh_token'
+		| 'implicit'
+		| undefined;
+	expiresAt?: string | undefined;
+	lastRefreshedAt?: string | undefined;
+}
 
 /** User-supplied credential fields. `schemaVersion` is stamped by the domain. */
 export interface CredentialPayloadInput {
@@ -33,6 +59,7 @@ export interface CredentialPayloadInput {
 	notes?: string;
 	tags?: string[];
 	expiresAt?: string;
+	oauth2Metadata?: OAuth2Metadata;
 }
 
 /** Validated, canonical credential payload as stored inside the ciphertext. */
@@ -46,6 +73,7 @@ export interface CredentialPayload {
 	notes?: string | undefined;
 	tags: string[];
 	expiresAt?: string | undefined;
+	oauth2Metadata?: OAuth2Metadata | undefined;
 }
 
 /**
@@ -62,7 +90,27 @@ interface StoredCredentialPayloadInput {
 	notes?: string | undefined;
 	tags?: string[] | undefined;
 	expiresAt?: string | undefined;
+	oauth2Metadata?: OAuth2Metadata | undefined;
 }
+
+const OAuth2MetadataSchema = z
+	.object({
+		appName: boundedNonBlankString(1, CREDENTIAL_NAME_MAX_LENGTH).optional(),
+		clientId: boundedNonBlankString(1, CREDENTIAL_NAME_MAX_LENGTH).optional(),
+		clientSecret: z.string().min(1).max(CREDENTIAL_SECRET_MAX_LENGTH).optional(),
+		tokenUrl: boundedNonBlankString(1, CREDENTIAL_URL_MAX_LENGTH).optional(),
+		authUrl: boundedNonBlankString(1, CREDENTIAL_URL_MAX_LENGTH).optional(),
+		scopes: z
+			.array(boundedNonBlankString(1, CREDENTIAL_TAG_MAX_LENGTH))
+			.max(CREDENTIAL_MAX_TAGS)
+			.optional(),
+		grantType: z
+			.enum(['authorization_code', 'client_credentials', 'refresh_token', 'implicit'])
+			.optional(),
+		expiresAt: IsoUtcTimestampSchema.optional(),
+		lastRefreshedAt: IsoUtcTimestampSchema.optional(),
+	})
+	.strict();
 
 /**
  * Schema for caller-provided credential input. It validates only fields the
@@ -82,14 +130,25 @@ const CredentialInputSchema = z
 			.max(CREDENTIAL_MAX_TAGS)
 			.default([]),
 		expiresAt: IsoUtcTimestampSchema.optional(),
+		oauth2Metadata: OAuth2MetadataSchema.optional(),
 	})
 	.strict();
 
-/** Schema for the persisted/decrypted representation, including `schemaVersion`. */
 const StoredCredentialPayloadSchema = CredentialInputSchema.extend({
 	schemaVersion: z.literal(CREDENTIAL_PAYLOAD_SCHEMA_VERSION),
-}).strict();
+})
+	.strict()
+	.superRefine((payload, context) => {
+		if (payload.type === 'oauth2' && payload.oauth2Metadata === undefined) {
+			context.addIssue({
+				code: 'custom',
+				path: ['oauth2Metadata'],
+				message: 'required for oauth2 credentials',
+			});
+		}
+	});
 
+/** Schema for the persisted/decrypted representation, including `schemaVersion`. */
 /**
  * Public schema for the stored credential payload. Its declared input type
  * honestly reflects that `schemaVersion` is required and that `tags` is optional
@@ -110,6 +169,7 @@ interface ParsedFields {
 	url?: string | undefined;
 	notes?: string | undefined;
 	expiresAt?: string | undefined;
+	oauth2Metadata?: OAuth2Metadata | undefined;
 }
 
 function toPayload(fields: ParsedFields): CredentialPayload {
@@ -123,6 +183,7 @@ function toPayload(fields: ParsedFields): CredentialPayload {
 		...(fields.url !== undefined ? { url: fields.url } : {}),
 		...(fields.notes !== undefined ? { notes: fields.notes } : {}),
 		...(fields.expiresAt !== undefined ? { expiresAt: fields.expiresAt } : {}),
+		...(fields.oauth2Metadata !== undefined ? { oauth2Metadata: fields.oauth2Metadata } : {}),
 	};
 }
 
@@ -149,7 +210,15 @@ function dedupeTags(input: unknown): unknown {
  * tag-count bound is applied.
  */
 export function validateCredentialPayload(input: unknown): CredentialPayload {
-	const result = CredentialInputSchema.safeParse(dedupeTags(input));
+	const result = CredentialInputSchema.superRefine((payload, context) => {
+		if (payload.type === 'oauth2' && payload.oauth2Metadata === undefined) {
+			context.addIssue({
+				code: 'custom',
+				path: ['oauth2Metadata'],
+				message: 'required for oauth2 credentials',
+			});
+		}
+	}).safeParse(dedupeTags(input));
 	if (!result.success) {
 		throw new InvalidCredentialPayloadError('invalid credential payload');
 	}
@@ -172,6 +241,7 @@ export function serializeCredentialPayload(payload: CredentialPayload): Uint8Arr
 	if (payload.notes !== undefined) canonical.notes = payload.notes;
 	canonical.tags = [...payload.tags];
 	if (payload.expiresAt !== undefined) canonical.expiresAt = payload.expiresAt;
+	if (payload.oauth2Metadata !== undefined) canonical.oauth2Metadata = payload.oauth2Metadata;
 
 	const bytes = encoder.encode(JSON.stringify(canonical));
 	if (bytes.length > ENCRYPTED_PAYLOAD_MAX_BYTES) {

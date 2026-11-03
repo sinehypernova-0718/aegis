@@ -1,13 +1,15 @@
-import type { VaultSession } from '@aegis/crypto';
-
 import {
 	InvalidKeyEnvelopeError,
 	InvalidVaultInputError,
 	VaultAlreadyUnlockedError,
 	VaultNotFoundError,
 } from '../../errors/domain-errors.js';
-import { mapEnvelopeValidationError, mapUnlockError } from '../../errors/mapping.js';
-import type { VaultCryptoPort } from '../../ports/vault-crypto.js';
+import {
+	asPersistenceError,
+	mapEnvelopeValidationError,
+	mapUnlockError,
+} from '../../errors/mapping.js';
+import type { VaultCryptoPort, VaultSession } from '../../ports/vault-crypto.js';
 import type { VaultRepositoryPort } from '../../ports/vault-repository.js';
 import type { VaultSessionManager } from '../../sessions/vault-session-manager.js';
 
@@ -51,7 +53,12 @@ export class UnlockVault {
 		}
 		const { vaultId, passphrase } = input;
 
-		const vault = await this.#deps.vaultRepository.getVaultById(vaultId);
+		let vault: Awaited<ReturnType<VaultRepositoryPort['getVaultById']>>;
+		try {
+			vault = await this.#deps.vaultRepository.getVaultById(vaultId);
+		} catch (error) {
+			throw asPersistenceError(error, 'failed to read vault');
+		}
 		if (!vault) {
 			throw new VaultNotFoundError(`vault not found: ${vaultId}`);
 		}
@@ -59,10 +66,15 @@ export class UnlockVault {
 			throw new VaultAlreadyUnlockedError(`vault ${vaultId} is already unlocked`);
 		}
 
-		const envelopeRow = await this.#deps.vaultRepository.getActiveKeyEnvelope(
-			vaultId,
-			this.#deps.keyEnvelopePurpose,
-		);
+		let envelopeRow: Awaited<ReturnType<VaultRepositoryPort['getActiveKeyEnvelope']>>;
+		try {
+			envelopeRow = await this.#deps.vaultRepository.getActiveKeyEnvelope(
+				vaultId,
+				this.#deps.keyEnvelopePurpose,
+			);
+		} catch (error) {
+			throw asPersistenceError(error, 'failed to read vault key envelope');
+		}
 		if (!envelopeRow) {
 			throw new InvalidKeyEnvelopeError('no active key envelope is available for this vault');
 		}

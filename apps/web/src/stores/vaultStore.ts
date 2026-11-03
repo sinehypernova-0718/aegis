@@ -1,20 +1,20 @@
 // Vault Store — Pinia store for vault state management
 
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { computed, ref } from 'vue';
+import type { CreateVaultResult, VaultClient } from '@/services/api/contracts';
+import { vaultClient as defaultVaultClient } from '@/services/api/vaultClient';
 import type {
-	CredentialSummary,
-	CredentialDetail,
-	VaultStatus,
 	ActivityEvent,
 	AppNotification,
-	CredentialFilters,
 	CreateCredentialInput,
-	UpdateCredentialInput,
+	CredentialDetail,
+	CredentialFilters,
+	CredentialSummary,
 	PageId,
+	UpdateCredentialInput,
+	VaultStatus,
 } from '@/types';
-import type { VaultClient, CreateVaultResult } from '@/services/api/contracts';
-import { vaultClient as defaultVaultClient } from '@/services/api/vaultClient';
 
 let activeClient: VaultClient = defaultVaultClient;
 
@@ -37,8 +37,14 @@ export const useVaultStore = defineStore('vault', () => {
 	const initError = ref<string | null>(null);
 
 	const credentials = ref<CredentialSummary[]>([]);
-	const passwords = ref<CredentialSummary[]>([]);
-	const apiKeys = ref<CredentialSummary[]>([]);
+	const passwords = computed(() =>
+		credentials.value.filter((credential) => credential.kind === 'password'),
+	);
+	const apiKeys = computed(() =>
+		credentials.value.filter(
+			(credential) => credential.kind === 'api-key' || credential.kind === 'access-token',
+		),
+	);
 	const selectedCredential = ref<CredentialDetail | null>(null);
 	const activity = ref<ActivityEvent[]>([]);
 	const notifications = ref<AppNotification[]>([]);
@@ -50,6 +56,9 @@ export const useVaultStore = defineStore('vault', () => {
 		sortOrder: 'desc',
 	});
 	const isLoading = ref(false);
+	const isLoadingMoreCredentials = ref(false);
+	const hasMoreCredentials = ref(false);
+	let nextCredentialCursor: string | undefined;
 	const error = ref<string | null>(null);
 	const isCreating = ref(false);
 	const isUnlocking = ref(false);
@@ -328,8 +337,8 @@ export const useVaultStore = defineStore('vault', () => {
 
 		// Immediate reactive state hygiene: scrub cached credentials and keys from frontend memory
 		credentials.value = [];
-		passwords.value = [];
-		apiKeys.value = [];
+		nextCredentialCursor = undefined;
+		hasMoreCredentials.value = false;
 		selectedCredential.value = null;
 		activity.value = [];
 		recoveryKeyPresented.value = null;
@@ -363,18 +372,40 @@ export const useVaultStore = defineStore('vault', () => {
 	async function loadAll() {
 		isLoading.value = true;
 		try {
-			const [creds, pwds, keys] = await Promise.all([
-				activeClient.listCredentials(),
-				activeClient.listPasswords(),
-				activeClient.listApiKeys(),
-			]);
-			credentials.value = creds;
-			passwords.value = pwds;
-			apiKeys.value = keys;
+			if (activeClient.listCredentialPage) {
+				const page = await activeClient.listCredentialPage();
+				credentials.value = page.items;
+				nextCredentialCursor = page.nextCursor ?? undefined;
+				hasMoreCredentials.value = nextCredentialCursor !== undefined;
+			} else {
+				credentials.value = await activeClient.listCredentials();
+				nextCredentialCursor = undefined;
+				hasMoreCredentials.value = false;
+			}
 		} catch {
 			error.value = 'Failed to load credentials';
 		} finally {
 			isLoading.value = false;
+		}
+	}
+
+	async function loadMoreCredentials() {
+		if (!activeClient.listCredentialPage || !nextCredentialCursor || isLoadingMoreCredentials.value)
+			return;
+		isLoadingMoreCredentials.value = true;
+		try {
+			const page = await activeClient.listCredentialPage(nextCredentialCursor);
+			const knownIds = new Set(credentials.value.map((credential) => credential.id));
+			credentials.value = [
+				...credentials.value,
+				...page.items.filter((credential) => !knownIds.has(credential.id)),
+			];
+			nextCredentialCursor = page.nextCursor ?? undefined;
+			hasMoreCredentials.value = nextCredentialCursor !== undefined;
+		} catch {
+			error.value = 'Failed to load more credentials';
+		} finally {
+			isLoadingMoreCredentials.value = false;
 		}
 	}
 
@@ -403,11 +434,6 @@ export const useVaultStore = defineStore('vault', () => {
 		try {
 			const summary = await activeClient.createCredential(input);
 			credentials.value = [summary, ...credentials.value];
-			if (input.kind === 'api-key' || input.kind === 'access-token') {
-				apiKeys.value = [summary, ...apiKeys.value];
-			} else if (input.kind === 'password') {
-				passwords.value = [summary, ...passwords.value];
-			}
 			notify({ type: 'success', title: 'Credential created' });
 			return summary;
 		} catch {
@@ -425,8 +451,6 @@ export const useVaultStore = defineStore('vault', () => {
 		try {
 			const summary = await activeClient.updateCredential(id, input);
 			credentials.value = credentials.value.map((c) => (c.id === id ? summary : c));
-			passwords.value = passwords.value.map((c) => (c.id === id ? summary : c));
-			apiKeys.value = apiKeys.value.map((c) => (c.id === id ? summary : c));
 			if (selectedCredential.value?.id === id) {
 				selectedCredential.value = { ...selectedCredential.value, ...summary } as CredentialDetail;
 			}
@@ -442,8 +466,6 @@ export const useVaultStore = defineStore('vault', () => {
 		try {
 			await activeClient.deleteCredential(id);
 			credentials.value = credentials.value.filter((c) => c.id !== id);
-			passwords.value = passwords.value.filter((c) => c.id !== id);
-			apiKeys.value = apiKeys.value.filter((c) => c.id !== id);
 			if (selectedCredential.value?.id === id) selectedCredential.value = null;
 			notify({ type: 'success', title: 'Credential deleted' });
 		} catch {
@@ -484,6 +506,8 @@ export const useVaultStore = defineStore('vault', () => {
 		notifications,
 		filters,
 		isLoading,
+		isLoadingMoreCredentials,
+		hasMoreCredentials,
 		error,
 		isCreating,
 		isUnlocking,
@@ -512,6 +536,7 @@ export const useVaultStore = defineStore('vault', () => {
 		lock,
 		retryLock,
 		loadAll,
+		loadMoreCredentials,
 		loadActivity,
 		selectCredential,
 		createCredential,

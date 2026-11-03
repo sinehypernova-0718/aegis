@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, or } from 'drizzle-orm';
+import { and, desc, eq, lt, or } from 'drizzle-orm';
 
 import { type Database } from '../client/database.js';
 import { mapDatabaseError } from '../errors/database.js';
@@ -96,8 +96,8 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 				? and(
 						eq(vaultRecords.vaultId, vaultId),
 						or(
-							gt(vaultRecords.createdAt, after.createdAt),
-							and(eq(vaultRecords.createdAt, after.createdAt), gt(vaultRecords.id, after.id)),
+							lt(vaultRecords.createdAt, after.createdAt),
+							and(eq(vaultRecords.createdAt, after.createdAt), lt(vaultRecords.id, after.id)),
 						),
 					)
 				: eq(vaultRecords.vaultId, vaultId);
@@ -105,7 +105,7 @@ export class DrizzleVaultRecordRepository implements VaultRecordRepository {
 				.select()
 				.from(vaultRecords)
 				.where(where)
-				.orderBy(asc(vaultRecords.createdAt), asc(vaultRecords.id))
+				.orderBy(desc(vaultRecords.createdAt), desc(vaultRecords.id))
 				.limit(options.limit);
 			return rows.map(normalizeRecord);
 		} catch (error) {

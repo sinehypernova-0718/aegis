@@ -1,5 +1,3 @@
-import type { VaultSession } from '@aegis/crypto';
-
 import {
 	InvalidKeyEnvelopeError,
 	InvalidVaultInputError,
@@ -8,7 +6,7 @@ import {
 } from '../../errors/domain-errors.js';
 import { isUniqueViolation } from '../../errors/mapping.js';
 import type { Clock, IdGenerator } from '../../ports/runtime.js';
-import type { VaultCryptoPort } from '../../ports/vault-crypto.js';
+import type { VaultCryptoPort, VaultSession } from '../../ports/vault-crypto.js';
 import type { VaultRepositoryPort } from '../../ports/vault-repository.js';
 import type { VaultSessionManager } from '../../sessions/vault-session-manager.js';
 

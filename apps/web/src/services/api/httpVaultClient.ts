@@ -21,17 +21,33 @@
  *    onto a freshly fetched detail before it is sent.
  */
 
+import type {
+	CredentialDetail as ApiCredentialDetail,
+	CredentialKind as ApiCredentialKind,
+	CredentialPayload as ApiCredentialPayload,
+	CredentialSummary as ApiCredentialSummary,
+	DeleteCredentialResponse as ApiDeleteCredentialResponse,
+	ErrorResponse as ApiErrorBody,
+	InitializeVaultResponse as ApiInitializeVaultResponse,
+	ListCredentialsResponse as ApiListCredentialsResult,
+	LockVaultResponse as ApiLockVaultResponse,
+	RecoverVaultResponse as ApiRecoverVaultResponse,
+	UnlockVaultResponse as ApiUnlockVaultResponse,
+	UpdateCredentialResponse as ApiUpdateCredentialResponse,
+	VaultStatusResponse as ApiVaultStatus,
+	CredentialPayloadInput,
+} from '@aegis/contracts';
 import { SessionClient } from '@/auth/session';
 import type {
+	ActivityEvent,
+	CreateCredentialInput,
+	CredentialDetail,
 	CredentialKind,
 	CredentialSummary,
-	CredentialDetail,
-	CreateCredentialInput,
 	UpdateCredentialInput,
 	VaultStatus,
-	ActivityEvent,
 } from '@/types';
-import type { VaultClient, CreateVaultResult, RecoverVaultResult } from './contracts';
+import type { CreateVaultResult, RecoverVaultResult, VaultClient } from './contracts';
 
 /**
  * Stable identity for the local vault. Supplied on vault creation so the
@@ -41,46 +57,6 @@ import type { VaultClient, CreateVaultResult, RecoverVaultResult } from './contr
 const DEFAULT_VAULT_ID = 'b3f0c9a1-7e2d-4b68-95cf-1a4d6e8b0c25';
 
 const SERVER_PASSPHRASE_MAX_LENGTH = 1_024;
-
-/** Backend kind (snake_case, `packages/contracts/credentials/credential-kind.ts`). */
-type ApiCredentialKind = string;
-
-interface ApiCredentialSummary {
-	id: string;
-	createdAt: string;
-	updatedAt: string;
-	type: ApiCredentialKind;
-	name: string;
-	username?: string;
-	url?: string;
-	tags: string[];
-	expiresAt?: string;
-}
-
-interface ApiCredentialPayload {
-	type: ApiCredentialKind;
-	name: string;
-	secret: string;
-	username?: string;
-	url?: string;
-	notes?: string;
-	tags: string[];
-	expiresAt?: string;
-}
-
-interface ApiCredentialDetail {
-	id: string;
-	createdAt: string;
-	updatedAt: string;
-	payload: ApiCredentialPayload;
-}
-
-/** Error body from `apps/server/src/http/error-handler.ts`. */
-interface ApiErrorBody {
-	code?: string;
-	message?: string;
-	requestId?: string;
-}
 
 /** Modeled after the server error codes (`packages/contracts/errors/codes.ts`). */
 export class VaultApiError extends Error {
@@ -112,6 +88,7 @@ const API_KIND_TO_UI: Record<string, CredentialKind> = {
 	api_key: 'api-key',
 	access_token: 'access-token',
 	refresh_token: 'access-token',
+	oauth2: 'oauth2',
 	ssh_key: 'ssh-key',
 	secure_note: 'secure-note',
 	// UI-only kinds with no dedicated backend counterpart yet: keep the
@@ -128,7 +105,7 @@ const UI_KIND_TO_API: Record<CredentialKind, ApiCredentialKind> = {
 	password: 'password',
 	'api-key': 'api_key',
 	'access-token': 'access_token',
-	oauth2: 'access_token', // OAuth2 storage model maps onto token payloads for now
+	oauth2: 'oauth2',
 	'ssh-key': 'ssh_key',
 	'secure-note': 'secure_note',
 };
@@ -176,6 +153,7 @@ function toUiDetail(api: ApiCredentialDetail, vaultId: string): CredentialDetail
 		updatedAt: api.updatedAt,
 		secret: api.payload.secret,
 		notes: api.payload.notes,
+		oauth2Metadata: api.payload.oauth2Metadata,
 	});
 }
 
@@ -187,9 +165,13 @@ interface UiPayloadFields {
 	notes?: string | undefined;
 	tags?: string[] | undefined;
 	expiresAt?: string | undefined;
+	oauth2Metadata?: ApiCredentialPayload['oauth2Metadata'] | undefined;
 }
 
-function toApiPayload(api: ApiCredentialKind, payload: UiPayloadFields): { payload: object } {
+function toApiPayload(
+	api: ApiCredentialKind,
+	payload: UiPayloadFields,
+): { payload: CredentialPayloadInput } {
 	return {
 		payload: omitUndefined({
 			type: api,
@@ -200,6 +182,7 @@ function toApiPayload(api: ApiCredentialKind, payload: UiPayloadFields): { paylo
 			notes: payload.notes,
 			tags: payload.tags ?? [],
 			expiresAt: payload.expiresAt,
+			oauth2Metadata: payload.oauth2Metadata,
 		}),
 	};
 }
@@ -207,16 +190,6 @@ function toApiPayload(api: ApiCredentialKind, payload: UiPayloadFields): { paylo
 // ---------------------------------------------------------------------------
 // The client
 // ---------------------------------------------------------------------------
-
-interface ApiVaultStatus {
-	status: 'uninitialized' | 'locked' | 'unlocked';
-	vaultId: string | null;
-}
-
-interface ApiListCredentialsResult {
-	items: ApiCredentialSummary[];
-	nextCursor: string | null;
-}
 
 export class HttpVaultClient implements VaultClient {
 	readonly #session: SessionClient;
@@ -377,7 +350,7 @@ export class HttpVaultClient implements VaultClient {
 				},
 				false,
 			);
-			const result = await this.#json<{ status: 'unlocked' }>(response);
+			const result = await this.#json<ApiUnlockVaultResponse>(response);
 			this.#state = result.status;
 			return { success: true };
 		} catch (cause) {
@@ -418,11 +391,7 @@ export class HttpVaultClient implements VaultClient {
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ passphrase, vaultId: this.#vaultId }),
 			});
-			const result = await this.#json<{
-				vaultId: string;
-				status: 'unlocked' | 'locked';
-				recoveryKey: string;
-			}>(response);
+			const result = await this.#json<ApiInitializeVaultResponse>(response);
 			this.#state = result.status;
 			// The backend issues the emergency recovery key EXACTLY ONCE at
 			// creation; the store gates setup completion on presenting it before
@@ -460,7 +429,7 @@ export class HttpVaultClient implements VaultClient {
 				},
 				false,
 			);
-			const result = await this.#json<{ status: 'unlocked' }>(response);
+			const result = await this.#json<ApiRecoverVaultResponse>(response);
 			this.#state = result.status;
 			return { success: true };
 		} catch (cause) {
@@ -491,7 +460,7 @@ export class HttpVaultClient implements VaultClient {
 		try {
 			// Locking is parameterless upstream, so send no body/content-type.
 			const response = await this.#request(`/vaults/${this.#vaultId}/lock`, { method: 'POST' });
-			const result = await this.#json<{ status: 'locked' }>(response);
+			const result = await this.#json<ApiLockVaultResponse>(response);
 			this.#state = result.status;
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
@@ -513,14 +482,8 @@ export class HttpVaultClient implements VaultClient {
 			const all: CredentialSummary[] = [];
 			let cursor: string | undefined;
 			do {
-				const search = new URLSearchParams({ limit: '100' });
-				if (cursor !== undefined) search.set('cursor', cursor);
-				const response = await this.#request(
-					`/vaults/${this.#vaultId}/credentials?${search.toString()}`,
-					{ method: 'GET' },
-				);
-				const page = await this.#json<ApiListCredentialsResult>(response);
-				for (const item of page.items) all.push(toUiSummary(item, this.#vaultId));
+				const page = await this.listCredentialPage(cursor);
+				all.push(...page.items);
 				cursor = page.nextCursor ?? undefined;
 			} while (cursor !== undefined);
 
@@ -531,6 +494,27 @@ export class HttpVaultClient implements VaultClient {
 				}
 				return true;
 			});
+		} catch (cause) {
+			this.#throwIfNetworkError(cause);
+		}
+	}
+
+	async listCredentialPage(cursor?: string): Promise<{
+		items: CredentialSummary[];
+		nextCursor: string | null;
+	}> {
+		try {
+			const search = new URLSearchParams({ limit: '100' });
+			if (cursor !== undefined) search.set('cursor', cursor);
+			const response = await this.#request(
+				`/vaults/${this.#vaultId}/credentials?${search.toString()}`,
+				{ method: 'GET' },
+			);
+			const page = await this.#json<ApiListCredentialsResult>(response);
+			return {
+				items: page.items.map((item) => toUiSummary(item, this.#vaultId)),
+				nextCursor: page.nextCursor,
+			};
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
 		}
@@ -580,6 +564,8 @@ export class HttpVaultClient implements VaultClient {
 				url: input.url !== undefined ? input.url : current.url,
 				notes: input.notes !== undefined ? input.notes : current.notes,
 				tags: input.tags !== undefined ? [...input.tags] : current.tags,
+				oauth2Metadata:
+					input.oauth2Metadata !== undefined ? input.oauth2Metadata : current.oauth2Metadata,
 			});
 			const response = await this.#request(
 				`/vaults/${this.#vaultId}/credentials/${encodeURIComponent(id)}`,
@@ -589,7 +575,7 @@ export class HttpVaultClient implements VaultClient {
 					body: JSON.stringify(toApiPayload(UI_KIND_TO_API[current.kind], merged)),
 				},
 			);
-			const result = await this.#json<{ id: string; updatedAt: string }>(response);
+			const result = await this.#json<ApiUpdateCredentialResponse>(response);
 			return omitUndefined({ ...current, updatedAt: result.updatedAt });
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
@@ -611,6 +597,7 @@ export class HttpVaultClient implements VaultClient {
 						url: input.url,
 						notes: input.notes,
 						tags: input.tags,
+						oauth2Metadata: input.oauth2Metadata,
 						expiresAt,
 					}),
 				),
@@ -628,7 +615,7 @@ export class HttpVaultClient implements VaultClient {
 				`/vaults/${this.#vaultId}/credentials/${encodeURIComponent(id)}`,
 				{ method: 'DELETE' },
 			);
-			await this.#json<{ id: string; deleted: boolean }>(response);
+			await this.#json<ApiDeleteCredentialResponse>(response);
 		} catch (cause) {
 			this.#throwIfNetworkError(cause);
 		}

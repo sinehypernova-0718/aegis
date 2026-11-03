@@ -278,6 +278,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@aegis/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       lucide-vue-next:
         specifier: ^0.469.0
         version: 0.469.0(vue@3.5.44(typescript@5.9.3))
@@ -357,16 +360,13 @@ importers:
 
   packages/domain:
     dependencies:
-      '@aegis/contracts':
-        specifier: workspace:*
-        version: link:../contracts
-      '@aegis/crypto':
-        specifier: workspace:*
-        version: link:../crypto
       zod:
         specifier: ^4.6.7
         version: 4.6.7
     devDependencies:
+      '@aegis/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@types/node':
         specifier: 24.19.2
         version: 24.19.2

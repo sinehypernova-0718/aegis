@@ -1,5 +1,11 @@
 # Aegis - Domain Layer & First Complete Vault Vertical Slice
 
+> **Historical planning snapshot.** The repository state and implementation
+> inventory below describe the earlier `master` revision identified in this
+> document, not the current working tree. Do not use its “current state” claims
+> as an inventory of the present implementation. The design decisions and
+> migration notes remain historical context only.
+
 **Implementation plan (reconnaissance only - no source modified)**
 
 Status: **PROPOSED / AWAITING APPROVAL**. This document contains no implementation. It records verified

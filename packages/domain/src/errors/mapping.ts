@@ -10,8 +10,8 @@ import {
 // ---------------------------------------------------------------------------
 // Cross-boundary error inspection.
 //
-// The domain deliberately does not import `@aegis/database` or the crypto error
-// classes. Adapters (Drizzle repositories, `@aegis/crypto`) are consumed
+// The domain deliberately does not import database or crypto error classes.
+// Adapters are consumed
 // structurally, so the domain recognizes their failures by stable `name`/`code`
 // markers. This keeps the dependency graph clean without leaking adapter types.
 // ---------------------------------------------------------------------------
@@ -27,7 +27,9 @@ export function isRecordNotFound(error: unknown): boolean {
 }
 
 function errorName(error: unknown): string | undefined {
-	return typeof error === 'object' && error !== null && typeof (error as { name?: unknown }).name === 'string'
+	return typeof error === 'object' &&
+		error !== null &&
+		typeof (error as { name?: unknown }).name === 'string'
 		? (error as { name: string }).name
 		: undefined;
 }
@@ -43,7 +45,9 @@ function cryptoErrorCode(error: unknown): string | undefined {
 /** Map an envelope-validation failure from crypto to a domain error. */
 export function mapEnvelopeValidationError(error: unknown): Error {
 	if (cryptoErrorCode(error) === 'CRYPTO_UNSUPPORTED_VERSION') {
-		return new UnsupportedEncryptionFormatError('unsupported key envelope version', { cause: error });
+		return new UnsupportedEncryptionFormatError('unsupported key envelope version', {
+			cause: error,
+		});
 	}
 	return new InvalidKeyEnvelopeError('vault key envelope is invalid', { cause: error });
 }

@@ -1,4 +1,3 @@
-import type { FastifyInstance } from 'fastify';
 import {
 	type ErrorCode,
 	type ErrorDetail,
@@ -6,13 +5,14 @@ import {
 	safeMessageForCode,
 } from '@aegis/contracts';
 import { DomainError } from '@aegis/domain';
+import type { FastifyInstance } from 'fastify';
 
 import { ForbiddenError, ThrottledError, UnauthenticatedError } from './errors.js';
 import { RequestValidationError } from './validation.js';
 
 /**
  * Centralized error-code to HTTP status mapping. Domain errors carry a stable
- * `contractCode`; routes never duplicate this logic.
+ * domain code; routes never duplicate this logic.
  */
 const STATUS_BY_CODE: Readonly<Record<ErrorCode, number>> = {
 	VALIDATION_ERROR: 400,
@@ -23,6 +23,25 @@ const STATUS_BY_CODE: Readonly<Record<ErrorCode, number>> = {
 	VAULT_LOCKED: 423,
 	RATE_LIMITED: 429,
 	INTERNAL_ERROR: 500,
+};
+
+/** Translate domain-owned failures into the public HTTP error vocabulary. */
+const DOMAIN_ERROR_TO_HTTP_CODE: Readonly<Record<string, ErrorCode>> = {
+	DOMAIN_INVALID_VAULT_INPUT: 'VALIDATION_ERROR',
+	DOMAIN_VAULT_ALREADY_INITIALIZED: 'CONFLICT',
+	DOMAIN_VAULT_NOT_FOUND: 'NOT_FOUND',
+	DOMAIN_VAULT_LOCKED: 'VAULT_LOCKED',
+	DOMAIN_VAULT_ALREADY_UNLOCKED: 'CONFLICT',
+	DOMAIN_SESSION_REGISTRATION_CONFLICT: 'CONFLICT',
+	DOMAIN_UNLOCK_REJECTED: 'UNAUTHENTICATED',
+	DOMAIN_INVALID_KEY_ENVELOPE: 'VALIDATION_ERROR',
+	DOMAIN_UNSUPPORTED_ENCRYPTION_FORMAT: 'VALIDATION_ERROR',
+	DOMAIN_CREDENTIAL_NOT_FOUND: 'NOT_FOUND',
+	DOMAIN_INVALID_CREDENTIAL_PAYLOAD: 'VALIDATION_ERROR',
+	DOMAIN_CREDENTIAL_DECRYPTION_FAILED: 'VALIDATION_ERROR',
+	DOMAIN_INVALID_PAGINATION: 'VALIDATION_ERROR',
+	DOMAIN_INVALID_CURSOR: 'VALIDATION_ERROR',
+	DOMAIN_PERSISTENCE_FAILED: 'INTERNAL_ERROR',
 };
 
 function errorBody(code: ErrorCode, requestId: string, details?: ErrorDetail[]): ErrorResponse {
@@ -72,7 +91,7 @@ function mapError(error: unknown): MappedError {
 		};
 	}
 	if (error instanceof DomainError) {
-		const code = error.contractCode;
+		const code = DOMAIN_ERROR_TO_HTTP_CODE[error.code] ?? 'INTERNAL_ERROR';
 		return {
 			statusCode: STATUS_BY_CODE[code] ?? 500,
 			code,

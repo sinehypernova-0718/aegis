@@ -1,7 +1,31 @@
-import type { VaultKeyEnvelope, VaultSession } from '@aegis/crypto';
+export interface VaultKeyEnvelope {
+	readonly version: number;
+}
+
+export interface EncryptedRecord {
+	readonly encryptionVersion: number;
+	readonly nonce: Uint8Array;
+	readonly ciphertext: Uint8Array;
+}
+
+export interface VaultSession {
+	readonly vaultId: string;
+	readonly isDisposed: boolean;
+	encryptRecord(input: {
+		readonly recordId: string;
+		readonly plaintext: Uint8Array;
+	}): EncryptedRecord;
+	decryptRecord(input: {
+		readonly recordId: string;
+		readonly encryptionVersion: number;
+		readonly nonce: Uint8Array;
+		readonly ciphertext: Uint8Array;
+	}): Uint8Array;
+	dispose(): void;
+}
 
 /**
- * Narrow behaviour port over `@aegis/crypto`.
+ * Narrow behavior port implemented by the composition-supplied crypto adapter.
  *
  * The domain orchestrates vault key material through this port and never touches
  * a DEK/KEK. The composition root supplies a real adapter; unit tests supply a
@@ -33,5 +57,5 @@ export interface VaultCryptoPort {
 	generateRecoveryKey(): string;
 	createVaultSession(input: CreateVaultSessionRequest): Promise<CreatedVaultSession>;
 	unlockVaultSession(input: UnlockVaultSessionRequest): Promise<VaultSession>;
-	validateEnvelope(input: unknown): VaultKeyEnvelope;
+	validateEnvelope(input: unknown): void;
 }
