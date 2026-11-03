@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from 'motion-v';
 import { ChevronDown, Check } from 'lucide-vue-next';
 import { durations, easings, springs } from '@/motion/tokens';
 import { controlBaseClass, controlSizeClasses, type ControlSize } from './formStyles';
+import { useAnchoredPanel } from './useAnchoredPanel';
 
 export interface AppSelectOption {
 	value: string;
@@ -83,38 +84,21 @@ function panelEl(): HTMLElement | null {
 	return node instanceof HTMLElement ? node : null;
 }
 
-/** Vertical gap between trigger and panel and the viewport margin. */
-const PANEL_GAP = 6;
 /** Panel height cap; rows scroll inside this budget. */
 const PANEL_MAX_HEIGHT = 288;
 /** Rough row height used for flip math before the panel has rendered. */
 const ESTIMATED_ROW_HEIGHT = 34;
 
-const panelStyle = ref<Record<string, string>>({});
-
 function estimatePanelHeight(): number {
 	return Math.min(normalized.value.length * ESTIMATED_ROW_HEIGHT + 12, PANEL_MAX_HEIGHT);
 }
 
-function positionPanel(): void {
-	const trigger = triggerRef.value;
-	if (!trigger) return;
-	const rect = trigger.getBoundingClientRect();
-	const measured = panelEl()?.offsetHeight;
-	const panelHeight = measured ?? estimatePanelHeight();
-	const spaceBelow = window.innerHeight - rect.bottom;
-	const top =
-		spaceBelow >= panelHeight + PANEL_GAP
-			? rect.bottom + PANEL_GAP
-			: Math.max(PANEL_GAP, rect.top - panelHeight - PANEL_GAP);
-	const left = Math.max(PANEL_GAP, Math.min(rect.left, window.innerWidth - rect.width - PANEL_GAP));
-	panelStyle.value = {
-		position: 'fixed',
-		top: `${top}px`,
-		left: `${left}px`,
-		width: `${rect.width}px`,
-	};
-}
+const { panelStyle, positionPanel } = useAnchoredPanel({
+	open,
+	getTrigger: () => triggerRef.value,
+	getPanel: panelEl,
+	getFallbackHeight: estimatePanelHeight,
+});
 
 function scrollActiveIntoView(): void {
 	void nextTick(() => {
@@ -235,18 +219,10 @@ function onDocPointer(e: PointerEvent): void {
 	open.value = false;
 }
 
-function onReflow(): void {
-	if (open.value) positionPanel();
-}
-
 document.addEventListener('pointerdown', onDocPointer);
-document.addEventListener('scroll', onReflow, true);
-window.addEventListener('resize', onReflow);
 
 onUnmounted(() => {
 	document.removeEventListener('pointerdown', onDocPointer);
-	document.removeEventListener('scroll', onReflow, true);
-	window.removeEventListener('resize', onReflow);
 	window.clearTimeout(typeBufferTimer);
 });
 </script>

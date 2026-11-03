@@ -8,6 +8,7 @@ import { computed } from 'vue';
 import { Fingerprint } from 'lucide-vue-next';
 import type { CredentialDetail } from '@/types';
 import AppBadge from '@/components/ui/AppBadge.vue';
+import { formatRelativeTime } from '@/utils/relativeTime';
 
 const props = defineProps<{ credential: CredentialDetail }>();
 
@@ -28,18 +29,6 @@ function environmentTone(
 	}
 }
 
-function formatTimeAgo(dateStr: string): string {
-	const date = new Date(dateStr);
-	const diff = Date.now() - date.getTime();
-	const mins = Math.floor(diff / 60000);
-	if (mins < 1) return 'just now';
-	if (mins < 60) return `${mins}m ago`;
-	const hours = Math.floor(mins / 60);
-	if (hours < 24) return `${hours}h ago`;
-	const days = Math.floor(hours / 24);
-	if (days < 30) return `${days}d ago`;
-	return date.toLocaleDateString();
-}
 </script>
 
 <template>
@@ -79,7 +68,7 @@ function formatTimeAgo(dateStr: string): string {
       <div v-if="meta.lastUsed" class="rounded-lg border p-3" :style="{ borderColor: 'var(--border-subtle)', background: 'var(--surface-secondary)' }">
         <p class="a-label mb-1">Last used</p>
         <p class="text-[12px] tabular-nums font-mono" :style="{ color: 'var(--text-primary)' }">
-          {{ formatTimeAgo(meta.lastUsed) }}
+          {{ formatRelativeTime(meta.lastUsed) }}
         </p>
       </div>
     </div>
