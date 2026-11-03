@@ -4,12 +4,14 @@ import {
 	serializeCredentialPayload,
 	validateCredentialPayload,
 } from '../../credentials/credential-payload.js';
+import { ENCRYPTED_RECORD_TYPE } from '../../credentials/credential-kind.js';
 import { CredentialNotFoundError, InvalidVaultInputError } from '../../errors/domain-errors.js';
-import { asPersistenceError, mapRecordEncryptionError } from '../../errors/mapping.js';
-import type {
-	CredentialRecordRow,
-	CredentialRepositoryPort,
-} from '../../ports/credential-repository.js';
+import {
+	asPersistenceError,
+	isRecordNotFound,
+	mapRecordEncryptionError,
+} from '../../errors/mapping.js';
+import type { CredentialRepositoryPort } from '../../ports/credential-repository.js';
 import type { Clock } from '../../ports/runtime.js';
 import type { EncryptedRecord } from '../../ports/vault-crypto.js';
 import type { VaultSessionManager } from '../../sessions/vault-session-manager.js';
@@ -54,16 +56,6 @@ export class UpdateCredential {
 		const { vaultId, id } = input;
 
 		return this.#deps.sessionManager.run(vaultId, async (session) => {
-			let row: CredentialRecordRow | null;
-			try {
-				row = await this.#deps.credentialRepository.getRecordById(vaultId, id);
-			} catch (error) {
-				throw asPersistenceError(error, 'failed to read credential');
-			}
-			if (!row) {
-				throw new CredentialNotFoundError(`credential not found: ${id}`);
-			}
-
 			const payload = validateCredentialPayload(input.payload);
 			const plaintext = serializeCredentialPayload(payload);
 
@@ -77,14 +69,21 @@ export class UpdateCredential {
 			const updatedAt = this.#deps.clock.now();
 			try {
 				const updated = await this.#deps.credentialRepository.updateRecord({
-					...row,
+					id,
+					vaultId,
+					recordType: ENCRYPTED_RECORD_TYPE,
 					encryptionVersion: encrypted.encryptionVersion,
 					nonce: encrypted.nonce,
 					ciphertext: encrypted.ciphertext,
+					createdAt: updatedAt,
 					updatedAt,
+					deletedAt: null,
 				});
 				return { id: updated.id, updatedAt: updated.updatedAt, payload };
 			} catch (error) {
+				if (isRecordNotFound(error)) {
+					throw new CredentialNotFoundError(`credential not found: ${id}`);
+				}
 				throw asPersistenceError(error, 'failed to update credential');
 			}
 		});
